@@ -1,4 +1,5 @@
 import os
+import time
 import pandas as pd
 import requests
 import streamlit as st
@@ -32,7 +33,6 @@ if st.session_state['authentication_status']:
     st.title("Dify Dashboard by Hotamago")
 
     # Cache data
-    @st.cache_data
     def get_accounts():
         res = requests.get(f"{api_url}/accounts")
         if res.status_code == 200:
@@ -65,6 +65,8 @@ if st.session_state['authentication_status']:
                 "created_at",
                 "updated_at"
             ])
+        
+        df = df.sort_values(by=['created_at'])
 
         # Show accounts
         edited_df = st.data_editor(
@@ -91,18 +93,21 @@ if st.session_state['authentication_status']:
         )
 
         # Save changes
-        if st.button("Save changes"):
-            edited_df = edited_df.to_dict(orient="records")
+        edited_df = edited_df.to_dict(orient="records")
+        # Check if there are changes
+        if df.to_dict(orient="records") == edited_df:
+            # st.info("No changes detected.")
+            pass
+        else:
             res = requests.post(f"{api_url}/accounts", json=edited_df)
 
             if res.status_code == 200:
                 st.success("Changes saved successfully.")
                 # Clear cache
-                st.cache_data.clear()
+                # st.cache_data.clear()
+                # Reload page
+                st.rerun()
             else:
                 st.error("Failed to save changes.")
-        
-        # Reload data
-        if st.button("Reload data"):
-            st.cache_data.clear()
-            st.rerun()
+                time.sleep(2)
+                st.rerun()
