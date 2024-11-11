@@ -280,7 +280,8 @@ x-shared-env: &shared-api-worker-env
 services:
   # API service
   api:
-    image: langgenius/dify-api:0.11.1
+    # image: langgenius/dify-api:0.7.2
+    image: hota/dify/api
     restart: always
     environment:
       # Use the shared environment variables.
@@ -296,11 +297,15 @@ services:
     networks:
       - ssrf_proxy_network
       - default
+    build:
+      context: ../api
+      dockerfile: Dockerfile
 
   # worker service
   # The Celery worker for processing the queue.
   worker:
-    image: langgenius/dify-api:0.11.1
+    # image: langgenius/dify-api:0.7.2
+    image: hota/dify/api
     restart: always
     environment:
       # Use the shared environment variables.
@@ -316,10 +321,27 @@ services:
     networks:
       - ssrf_proxy_network
       - default
+    build:
+      context: ../api
+      dockerfile: Dockerfile
+
+  # Custom dashboard service
+  dashboard:
+    image: hota/dify/dashboard
+    restart: always
+    environment:
+      API_URL: "http://api:5001"
+    networks:
+      - ssrf_proxy_network
+      - default
+    build:
+      context: ../dashboard
+      dockerfile: Dockerfile
 
   # Frontend web application.
   web:
-    image: langgenius/dify-web:0.11.1
+    # image: langgenius/dify-web:0.7.2
+    image: hota/dify/web
     restart: always
     environment:
       CONSOLE_API_URL: ${CONSOLE_API_URL:-}
@@ -328,6 +350,9 @@ services:
       NEXT_TELEMETRY_DISABLED: ${NEXT_TELEMETRY_DISABLED:-0}
       TEXT_GENERATION_TIMEOUT_MS: ${TEXT_GENERATION_TIMEOUT_MS:-60000}
       CSP_WHITELIST: ${CSP_WHITELIST:-}
+    build:
+      context: ../web
+      dockerfile: Dockerfile
 
   # The postgres database.
   db:
@@ -476,6 +501,11 @@ services:
     ports:
       - '${EXPOSE_NGINX_PORT:-80}:${NGINX_PORT:-80}'
       - '${EXPOSE_NGINX_SSL_PORT:-443}:${NGINX_SSL_PORT:-443}'
+      - '5001:5001'
+      - '8501:8501'
+    networks:
+      - ssrf_proxy_network
+      - default
 
   # The Weaviate vector store.
   weaviate:

@@ -743,6 +743,36 @@ class RegisterService:
     @classmethod
     def _get_invitation_token_key(cls, token: str) -> str:
         return f"member_invite:token:{token}"
+    
+    @staticmethod
+    def setup_register(email: str, name: str, password: str, ip_address: str) -> None:
+        """
+        Setup dify
+
+        :param email: email
+        :param name: username
+        :param password: password
+        :param ip_address: ip address
+        """
+        try:
+            # Register
+            account = AccountService.create_account(
+                email=email,
+                name=name,
+                interface_language=languages[0],
+                password=password,
+                is_setup=True,
+            )
+
+            account.last_login_ip = ip_address
+            account.initialized_at = datetime.now(timezone.utc).replace(tzinfo=None)
+
+            TenantService.create_owner_tenant_if_not_exist(account=account, is_setup=True)
+
+            db.session.commit()
+        except Exception as e:
+            logging.exception(f"Setup failed: {e}")
+            raise ValueError(f"Setup failed: {e}")
 
     @classmethod
     def setup(cls, email: str, name: str, password: str, ip_address: str) -> None:

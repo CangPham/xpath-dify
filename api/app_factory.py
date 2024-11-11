@@ -142,6 +142,7 @@ def register_blueprints(app):
     from controllers.inner_api import bp as inner_api_bp
     from controllers.service_api import bp as service_api_bp
     from controllers.web import bp as web_bp
+    from controllers.dashboard import bp as dashboard_bp
 
     CORS(
         service_api_bp,
@@ -176,3 +177,10 @@ def register_blueprints(app):
     app.register_blueprint(files_bp)
 
     app.register_blueprint(inner_api_bp)
+
+    CORS(
+        dashboard_bp,
+        allow_headers=["Content-Type"],
+        methods=["GET", "PUT", "POST", "DELETE", "OPTIONS", "PATCH"]
+    )
+    app.register_blueprint(dashboard_bp)
