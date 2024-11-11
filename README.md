@@ -35,5 +35,5 @@ localhost:5001
 
 ## Allow port for access by port on public domain or ip
 ```
-sudo ufw allow 5001
+sudo ufw allow 8501
 ```
