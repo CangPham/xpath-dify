@@ -26,11 +26,11 @@ localhost:443 (ssl)
 ```
 ### Dashboard
 ```
-localhost:5001
+localhost:8501
 ```
 ### API for dashboard
 ```
-localhost:8501
+localhost:5001
 ```
 
 ## Allow port for access by port on public domain or ip
