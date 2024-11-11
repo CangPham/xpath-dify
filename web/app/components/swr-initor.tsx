@@ -42,11 +42,11 @@ const SwrInitor = ({
   useEffect(() => {
     (async () => {
       try {
-        // const isFinished = await isSetupFinished()
-        // if (!isFinished) {
-        //   router.replace('/install')
-        //   return
-        // }
+        const isFinished = await isSetupFinished()
+        if (!isFinished) {
+          router.replace('/install')
+          return
+        }
         if (!((consoleToken && refreshToken) || (consoleTokenFromLocalStorage && refreshTokenFromLocalStorage))) {
           router.replace('/signin')
           return
