@@ -1,9 +1,19 @@
 # How to install
-## Install container
+## Image and container
+### Intall
 ```
 cd ./docker
 docker compose build
 docker compose -p hota-dify-test-v1 up -d --no-build
+```
+### Verify
+check if hota-dify-test-v1 exists
+```
+docker ps
+```
+### Run
+```
+docker start hota-dify-test-v1
 ```
 
 ## List port of project
