@@ -30,8 +30,6 @@ except Exception as e:
     st.error(e)
 
 if st.session_state['authentication_status']:
-    st.title("Dify Dashboard by Hotamago")
-
     # Cache data
     def get_accounts():
         res = requests.get(f"{api_url}/accounts")
@@ -51,20 +49,24 @@ if st.session_state['authentication_status']:
         with st.spinner("Loading accounts..."):
             accounts = get_accounts()
         
+        if len(accounts) == 0:
+            st.warning("No accounts found.")
+            st.stop()
+        
         # Load to dataframe
-        df = pd.DataFrame(
-            accounts,
-            columns=[
-                "id",
-                "name",
-                "email",
-                "status",
-                "last_login_at",
-                "last_login_ip",
-                "last_active_at",
-                "created_at",
-                "updated_at"
-            ])
+        df = pd.DataFrame(accounts, columns=[
+            "id",
+            "name",
+            "email",
+            "status",
+            "month_before_banned",
+            "max_of_apps",
+            "last_login_at",
+            "last_login_ip",
+            "last_active_at",
+            "created_at",
+            "updated_at"
+        ])
         
         df = df.sort_values(by=['created_at'])
 
@@ -76,6 +78,16 @@ if st.session_state['authentication_status']:
                     "status",
                     help="Account status",
                     options=["pending", "uninitialized", "active", "banned", "closed"],
+                    required=True,
+                ),
+                "month_before_banned": st.column_config.NumberColumn(
+                    "month_before_banned",
+                    help="The number of months before the user account is banned",
+                    required=True,
+                ),
+                "max_of_apps": st.column_config.NumberColumn(
+                    "max_of_apps",
+                    help="The maximum number of apps that a user can create",
                     required=True,
                 ),
             },

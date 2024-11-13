@@ -4,6 +4,17 @@ from configs import dify_config
 from services.billing_service import BillingService
 from services.enterprise.enterprise_service import EnterpriseService
 
+from extensions.ext_database import db
+from sqlalchemy import func
+from models.account import (
+    Account,
+    Tenant,
+    TenantAccountJoin,
+    TenantAccountJoinRole,
+)
+from models.dataset import Dataset, Document
+from models.model import App, MessageAnnotation
+
 
 class SubscriptionModel(BaseModel):
     plan: str = "sandbox"
@@ -11,7 +22,7 @@ class SubscriptionModel(BaseModel):
 
 
 class BillingModel(BaseModel):
-    enabled: bool = False
+    enabled: bool = True
     subscription: SubscriptionModel = SubscriptionModel()
 
 
@@ -56,10 +67,28 @@ class FeatureService:
 
         cls._fulfill_params_from_env(features)
 
-        if dify_config.BILLING_ENABLED:
-            cls._fulfill_params_from_billing_api(features, tenant_id)
+        # if dify_config.BILLING_ENABLED:
+        #     cls._fulfill_params_from_billing_api(features, tenant_id)
+        cls._fulfill_params_from_billing_self_host(features, tenant_id)
+        
+        cls._fulfill_custom(features, tenant_id)
 
         return features
+    
+    @classmethod
+    def _fulfill_custom(cls, features: FeatureModel, tenant_id: str):
+        join = (
+            db.session.query(TenantAccountJoin)
+            .filter(TenantAccountJoin.tenant_id == tenant_id, TenantAccountJoin.role == TenantAccountJoinRole.OWNER.value)
+            .first()
+        )
+        account_owner = (
+            db.session.query(Account)
+            .filter(Account.id == join.account_id)
+            .first()
+        )
+        # Edit the features here
+        features.apps.limit = account_owner.max_of_apps
 
     @classmethod
     def get_system_features(cls) -> SystemFeatureModel:
@@ -87,6 +116,26 @@ class FeatureService:
         features.can_replace_logo = dify_config.CAN_REPLACE_LOGO
         features.model_load_balancing_enabled = dify_config.MODEL_LB_ENABLED
         features.dataset_operator_enabled = dify_config.DATASET_OPERATOR_ENABLED
+
+    @classmethod
+    def _fulfill_params_from_billing_self_host(cls, features: FeatureModel, tenant_id: str):
+        features.billing.enabled = True
+        features.billing.subscription.plan = "sandbox"
+        features.billing.subscription.interval = "month"
+
+        features.members.size = db.session.query(func.count(TenantAccountJoin.account_id)).filter(TenantAccountJoin.tenant_id == tenant_id).scalar()
+        features.apps.size = db.session.query(func.count(App.id)).filter(App.tenant_id == tenant_id).scalar()
+        features.vector_space.size = db.session.query(func.count(Dataset.id)).filter(Dataset.tenant_id == tenant_id).scalar()
+        features.documents_upload_quota.size = db.session.query(func.count(Document.id)).filter(Document.tenant_id == tenant_id).scalar()
+
+        # Get all app of the tenant, query get only column id
+        apps = db.session.query(App.id).filter(App.tenant_id == tenant_id).all()
+        app_ids = [app.id for app in apps]
+        features.annotation_quota_limit.size = db.session.query(func.count(MessageAnnotation.id)).filter(MessageAnnotation.app_id.in_(app_ids)).scalar()
+
+        features.docs_processing = "standard"
+        features.can_replace_logo = False
+        features.model_load_balancing_enabled = False
 
     @classmethod
     def _fulfill_params_from_billing_api(cls, features: FeatureModel, tenant_id: str):

@@ -7,8 +7,13 @@ from configs.feature import FeatureConfig
 from configs.middleware import MiddlewareConfig
 from configs.packaging import PackagingInfo
 
+from configs.custom import UserAccountDefaultConfig
+
 
 class DifyConfig(
+    # Custom
+    UserAccountDefaultConfig,
+
     # Packaging info
     PackagingInfo,
     # Deployment configs

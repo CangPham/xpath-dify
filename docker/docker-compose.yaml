@@ -367,6 +367,8 @@ services:
       interval: 1s
       timeout: 3s
       retries: 30
+    ports:
+      - '${EXPOSE_DB_PORT:-5432}:5432'
 
   # The redis cache.
   redis:
@@ -445,7 +447,11 @@ services:
       - CERTBOT_EMAIL=${CERTBOT_EMAIL}
       - CERTBOT_DOMAIN=${CERTBOT_DOMAIN}
       - CERTBOT_OPTIONS=${CERTBOT_OPTIONS:-}
-    entrypoint: ['/docker-entrypoint.sh']
+    entrypoint: [
+      'sh',
+      '-c',
+      'chmod +x /docker-entrypoint.sh && /docker-entrypoint.sh'
+    ]
     command: ['tail', '-f', '/dev/null']
 
   # The nginx reverse proxy.

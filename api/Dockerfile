@@ -72,6 +72,11 @@ RUN python -c "import nltk; nltk.download('punkt'); nltk.download('averaged_perc
 # Copy source code
 COPY . /app/api/
 
+# Build migration
+# COPY ./migrations/alembic.ini /app/api/alembic.ini
+# RUN export PYTHONPATH='/app/api':$PYTHONPATH && alembic revision --autogenerate -m "init"
+# RUN poetry run python -m flask db revision --autogenerate -m "init"
+
 # Copy entrypoint
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

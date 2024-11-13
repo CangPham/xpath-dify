@@ -145,6 +145,12 @@ class AccountService:
 
         if account.status == AccountStatus.BANNED.value:
             raise AccountLoginError("Account is banned.")
+        
+        # Compare account.created_at + account.month_before_banned months with current time
+        if account.created_at + timedelta(days=int(account.month_before_banned) * 30) < datetime.now(timezone.utc).replace(tzinfo=None):
+            account.status = AccountStatus.BANNED.value
+            db.session.commit()
+            raise AccountLoginError("Account is banned.")
 
         if password and invite_token and account.password is None:
             # if invite_token is valid, set password and password_salt

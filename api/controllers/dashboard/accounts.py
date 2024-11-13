@@ -15,7 +15,12 @@ class ApiAccounts(Resource):
                 "id": account.id,
                 "name": account.name,
                 "email": account.email,
+
                 "status": account.status,
+                # Custom fields
+                "month_before_banned": account.month_before_banned,
+                "max_of_apps": account.max_of_apps,
+
                 "last_login_at": account.last_login_at,
                 "last_login_ip": account.last_login_ip,
                 "last_active_at": account.last_active_at,
@@ -29,6 +34,8 @@ class ApiAccounts(Resource):
         for account in accounts:
             iter_acc = Account.query.get(account["id"])
             iter_acc.status = account["status"]
+            iter_acc.month_before_banned = account["month_before_banned"]
+            iter_acc.max_of_apps = account["max_of_apps"]
         db.session.commit()
         return {
             "status": "success",

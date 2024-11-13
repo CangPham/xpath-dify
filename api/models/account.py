@@ -7,6 +7,8 @@ from extensions.ext_database import db
 
 from .types import StringUUID
 
+from configs import dify_config
+
 
 class AccountStatus(str, enum.Enum):
     PENDING = "pending"
@@ -36,6 +38,10 @@ class Account(UserMixin, db.Model):
     initialized_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, nullable=False, server_default=db.text("CURRENT_TIMESTAMP(0)"))
     updated_at = db.Column(db.DateTime, nullable=False, server_default=db.text("CURRENT_TIMESTAMP(0)"))
+
+    # Custom fields
+    month_before_banned = db.Column(db.Integer, nullable=False, server_default=db.text(str(dify_config.user_account_month_before_banned)))
+    max_of_apps = db.Column(db.Integer, nullable=False, server_default=db.text(str(dify_config.user_account_max_of_apps)))
 
     @property
     def is_password_set(self):
