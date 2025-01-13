@@ -111,7 +111,7 @@ if st.session_state['authentication_status']:
             # st.info("No changes detected.")
             pass
         else:
-            res = requests.post(f"{api_url}/accounts", json=edited_df)
+            res = requests.put(f"{api_url}/accounts", json=edited_df)
 
             if res.status_code == 200:
                 st.success("Changes saved successfully.")
@@ -123,3 +123,31 @@ if st.session_state['authentication_status']:
                 st.error("Failed to save changes.")
                 time.sleep(2)
                 st.rerun()
+
+        # Delete account by ID, UI form for input ID to delete
+        st.markdown("### Delete Account")
+        with st.form("delete_account_form"):
+            delete_id = st.text_input("Enter Account ID to delete")
+            submit_button = st.form_submit_button("Delete Account")
+        
+        if submit_button:
+            if delete_id:
+                try:
+                    st.write(f"{api_url}/accounts/{delete_id}")
+                    res = requests.delete(f"{api_url}/accounts/{delete_id}")
+                    try:
+                        resjson = res.json()
+                        if resjson['status'] == "success":
+                            st.success(f"Account {delete_id} deleted successfully.")
+                            st.rerun()
+                        else:
+                            st.error(f"Error: {resjson['message']}")
+                    except:
+                        st.error(f"Unknow error: {res.text}")
+                except Exception as e:
+                    st.error(f"Error request: {e}")
+            else:
+                st.error("Please enter a valid Account ID.")
+
+else:
+    st.warning("Please log in to access the dashboard.")

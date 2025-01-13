@@ -147,7 +147,7 @@ class AccountService:
             raise AccountLoginError("Account is banned.")
         
         # Compare account.created_at + account.month_before_banned months with current time
-        if account.created_at + timedelta(days=int(account.month_before_banned) * 30) < datetime.now(timezone.utc).replace(tzinfo=None):
+        if int(account.month_before_banned) > 0 and account.created_at + timedelta(days=int(account.month_before_banned) * 30) < datetime.now(timezone.utc).replace(tzinfo=None):
             account.status = AccountStatus.BANNED.value
             db.session.commit()
             raise AccountLoginError("Account is banned.")

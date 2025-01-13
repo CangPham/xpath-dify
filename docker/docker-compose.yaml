@@ -292,6 +292,7 @@ services:
       - db
       - redis
     volumes:
+      # - ../api:/app/api # Development mode
       # Mount the storage directory to the container, for storing user files.
       - ./volumes/app/storage:/app/api/storage
     networks:
@@ -316,6 +317,7 @@ services:
       - db
       - redis
     volumes:
+      # - ../api:/app/api # Development mode
       # Mount the storage directory to the container, for storing user files.
       - ./volumes/app/storage:/app/api/storage
     networks:
@@ -334,6 +336,8 @@ services:
     networks:
       - ssrf_proxy_network
       - default
+    # volumes:
+    #   - ../dashboard:/app/dashboard # Development mode
     build:
       context: ../dashboard
       dockerfile: Dockerfile

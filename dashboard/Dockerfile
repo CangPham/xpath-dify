@@ -12,14 +12,14 @@ ENV API_URL=http://localhost:5001
 
 EXPOSE 8501
 
-# Add requirements.txt
-ADD requirements.txt /app/dashboard/requirements.txt
+# COPY requirements.txt
+COPY requirements.txt /app/dashboard/requirements.txt
 
 # Install dependencies
-RUN pip install -r requirements.txt
+RUN pip install -r requirements.txt --no-cache-dir
 
-# Add source code
-ADD . /app/dashboard/
+# COPY source code
+COPY . /app/dashboard/
 
 # Set up healthcheck
 HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
