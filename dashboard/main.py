@@ -44,6 +44,13 @@ if st.session_state['authentication_status']:
 
     if menu == "Accounts":
         st.subheader("Accounts")
+
+        # Button to refresh
+        if st.button("Refresh"):
+            # Clear cache
+            # st.cache_data.clear()
+            # Reload page
+            st.rerun()
         
         # Get accounts from API flask
         with st.spinner("Loading accounts..."):
