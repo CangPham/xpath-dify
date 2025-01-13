@@ -18,8 +18,13 @@ class ApiAccounts(Resource):
                         "name": account.name,
                         "email": account.email,
                         "status": account.status,
+
                         "month_before_banned": account.month_before_banned,
                         "max_of_apps": account.max_of_apps,
+                        "max_vector_space": account.max_vector_space,
+                        "max_annotation_quota_limit": account.max_annotation_quota_limit,
+                        "max_documents_upload_quota": account.max_documents_upload_quota,
+
                         "last_login_at": account.last_login_at,
                         "last_login_ip": account.last_login_ip,
                         "last_active_at": account.last_active_at,

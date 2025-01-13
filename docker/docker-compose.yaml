@@ -295,6 +295,7 @@ services:
       # - ../api:/app/api # Development mode
       # Mount the storage directory to the container, for storing user files.
       - ./volumes/app/storage:/app/api/storage
+      # - ../api/migrations/versions:/app/api/migrations/versions # Development mode
     networks:
       - ssrf_proxy_network
       - default
@@ -320,6 +321,7 @@ services:
       # - ../api:/app/api # Development mode
       # Mount the storage directory to the container, for storing user files.
       - ./volumes/app/storage:/app/api/storage
+      # - ../api/migrations/versions:/app/api/migrations/versions # Development mode
     networks:
       - ssrf_proxy_network
       - default

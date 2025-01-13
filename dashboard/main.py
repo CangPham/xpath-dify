@@ -59,8 +59,13 @@ if st.session_state['authentication_status']:
             "name",
             "email",
             "status",
+
             "month_before_banned",
             "max_of_apps",
+            "max_vector_space",
+            "max_annotation_quota_limit",
+            "max_documents_upload_quota",
+
             "last_login_at",
             "last_login_ip",
             "last_active_at",
@@ -88,6 +93,21 @@ if st.session_state['authentication_status']:
                 "max_of_apps": st.column_config.NumberColumn(
                     "max_of_apps",
                     help="The maximum number of apps that a user can create",
+                    required=True,
+                ),
+                "max_vector_space": st.column_config.NumberColumn(
+                    "max_vector_space",
+                    help="The maximum size vector spaces (MB)",
+                    required=True,
+                ),
+                "max_annotation_quota_limit": st.column_config.NumberColumn(
+                    "max_annotation_quota_limit",
+                    help="The maximum number of annotation quota limit that a user can create",
+                    required=True,
+                ),
+                "max_documents_upload_quota": st.column_config.NumberColumn(
+                    "max_documents_upload_quota",
+                    help="The maximum number of documents upload quota that a user can create",
                     required=True,
                 ),
             },

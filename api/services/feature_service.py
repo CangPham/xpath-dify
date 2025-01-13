@@ -89,6 +89,9 @@ class FeatureService:
         )
         # Edit the features here
         features.apps.limit = account_owner.max_of_apps
+        features.vector_space.limit = account_owner.max_vector_space
+        features.annotation_quota_limit.limit = account_owner.max_annotation_quota_limit
+        features.documents_upload_quota.limit = account_owner.max_documents_upload_quota
 
     @classmethod
     def get_system_features(cls) -> SystemFeatureModel:
