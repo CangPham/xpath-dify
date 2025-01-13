@@ -1,3 +1,6 @@
 Single-database configuration for Flask.
 
-flask db migrate -m "commit commend"
+in api folder
+```
+poetry run python -m flask db migrate -m "comment change"
+```
