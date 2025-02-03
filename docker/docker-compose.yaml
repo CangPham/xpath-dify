@@ -806,7 +806,7 @@ services:
       - elasticsearch
     restart: always
     volumes:
-      - dify_es01_data:/usr/share/elasticsearch/data
+      - ProAI_es01_data:/usr/share/elasticsearch/data
     environment:
       ELASTIC_PASSWORD: ${ELASTICSEARCH_PASSWORD:-elastic}
       cluster.name: dify-es-cluster
