@@ -875,4 +875,4 @@ networks:
 
 volumes:
   oradata:
-  dify_es01_data:
+  ProAI_es01_data:
