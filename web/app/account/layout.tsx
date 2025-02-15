@@ -34,7 +34,7 @@ const Layout = ({ children }: { children: ReactNode }) => {
 }
 
 export const metadata = {
-  title: 'ProAI',
+  title: 'Dify',
 }
 
 export default Layout

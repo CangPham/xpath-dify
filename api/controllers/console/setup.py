@@ -4,11 +4,8 @@ from flask_restful import Resource, reqparse
 from configs import dify_config
 from libs.helper import StrLen, email, extract_remote_ip
 from libs.password import valid_password
-from models.model import DifySetup, Account
+from models.model import DifySetup
 from services.account_service import RegisterService, TenantService
-
-from sqlalchemy import func
-from extensions.ext_database import db
 
 from . import api
 from .error import AlreadySetupError, NotInitValidateError

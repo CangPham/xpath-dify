@@ -1,5 +1,5 @@
 # base image
-FROM python:3.10-slim-bookworm AS base
+FROM python:3.12-slim-bookworm AS base
 
 WORKDIR /app/api
 
@@ -55,7 +55,7 @@ RUN apt-get update \
     && echo "deb http://deb.debian.org/debian testing main" > /etc/apt/sources.list \
     && apt-get update \
     # For Security
-    && apt-get install -y --no-install-recommends expat=2.6.4-1 libldap2=2.6.9+dfsg-1 perl=5.40.0-8 libsqlite3-0=3.46.1-1 zlib1g=1:1.3.dfsg+really1.3.1-1+b1 \
+    && apt-get install -y --no-install-recommends expat libldap-2.5-0 perl libsqlite3-0 zlib1g \
     # install a chinese font to support the use of tools like matplotlib
     && apt-get install -y fonts-noto-cjk \
     && apt-get autoremove -y \
@@ -71,11 +71,6 @@ RUN python -c "import nltk; nltk.download('punkt'); nltk.download('averaged_perc
 
 # Copy source code
 COPY . /app/api/
-
-# Build migration
-# COPY ./migrations/alembic.ini /app/api/alembic.ini
-# RUN export PYTHONPATH='/app/api':$PYTHONPATH && alembic revision --autogenerate -m "init"
-# RUN poetry run python -m flask db revision --autogenerate -m "init"
 
 # Copy entrypoint
 COPY docker/entrypoint.sh /entrypoint.sh
