@@ -6,17 +6,6 @@ from configs import dify_config
 from services.billing_service import BillingService
 from services.enterprise.enterprise_service import EnterpriseService
 
-from extensions.ext_database import db
-from sqlalchemy import func
-from models.account import (
-    Account,
-    Tenant,
-    TenantAccountJoin,
-    TenantAccountJoinRole,
-)
-from models.dataset import Dataset, Document
-from models.model import App, MessageAnnotation
-
 
 class SubscriptionModel(BaseModel):
     plan: str = "sandbox"
@@ -24,8 +13,13 @@ class SubscriptionModel(BaseModel):
 
 
 class BillingModel(BaseModel):
-    enabled: bool = True
+    enabled: bool = False
     subscription: SubscriptionModel = SubscriptionModel()
+
+
+class EducationModel(BaseModel):
+    enabled: bool = False
+    activated: bool = False
 
 
 class LimitationModel(BaseModel):
@@ -49,9 +43,11 @@ class LicenseModel(BaseModel):
 
 class FeatureModel(BaseModel):
     billing: BillingModel = BillingModel()
+    education: EducationModel = EducationModel()
     members: LimitationModel = LimitationModel(size=0, limit=1)
     apps: LimitationModel = LimitationModel(size=0, limit=10)
     vector_space: LimitationModel = LimitationModel(size=0, limit=5)
+    knowledge_rate_limit: int = 10
     annotation_quota_limit: LimitationModel = LimitationModel(size=0, limit=10)
     documents_upload_quota: LimitationModel = LimitationModel(size=0, limit=50)
     docs_processing: str = "standard"
@@ -63,17 +59,26 @@ class FeatureModel(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
 
 
+class KnowledgeRateLimitModel(BaseModel):
+    enabled: bool = False
+    limit: int = 10
+    subscription_plan: str = ""
+
+
 class SystemFeatureModel(BaseModel):
     sso_enforced_for_signin: bool = False
     sso_enforced_for_signin_protocol: str = ""
     sso_enforced_for_web: bool = False
     sso_enforced_for_web_protocol: str = ""
     enable_web_sso_switch_component: bool = False
+    enable_marketplace: bool = False
+    max_plugin_package_size: int = dify_config.PLUGIN_MAX_PACKAGE_SIZE
     enable_email_code_login: bool = False
     enable_email_password_login: bool = True
     enable_social_oauth_login: bool = False
     is_allow_register: bool = False
     is_allow_create_workspace: bool = False
+    is_email_setup: bool = False
     license: LicenseModel = LicenseModel()
 
 
@@ -84,31 +89,20 @@ class FeatureService:
 
         cls._fulfill_params_from_env(features)
 
-        # if dify_config.BILLING_ENABLED:
-        #     cls._fulfill_params_from_billing_api(features, tenant_id)
-        cls._fulfill_params_from_billing_self_host(features, tenant_id)
-        
-        cls._fulfill_custom(features, tenant_id)
+        if dify_config.BILLING_ENABLED and tenant_id:
+            cls._fulfill_params_from_billing_api(features, tenant_id)
 
         return features
-    
+
     @classmethod
-    def _fulfill_custom(cls, features: FeatureModel, tenant_id: str):
-        join = (
-            db.session.query(TenantAccountJoin)
-            .filter(TenantAccountJoin.tenant_id == tenant_id, TenantAccountJoin.role == TenantAccountJoinRole.OWNER.value)
-            .first()
-        )
-        account_owner = (
-            db.session.query(Account)
-            .filter(Account.id == join.account_id)
-            .first()
-        )
-        # Edit the features here
-        features.apps.limit = account_owner.max_of_apps
-        features.vector_space.limit = account_owner.max_vector_space
-        features.annotation_quota_limit.limit = account_owner.max_annotation_quota_limit
-        features.documents_upload_quota.limit = account_owner.max_documents_upload_quota
+    def get_knowledge_rate_limit(cls, tenant_id: str):
+        knowledge_rate_limit = KnowledgeRateLimitModel()
+        if dify_config.BILLING_ENABLED and tenant_id:
+            knowledge_rate_limit.enabled = True
+            limit_info = BillingService.get_knowledge_rate_limit(tenant_id)
+            knowledge_rate_limit.limit = limit_info.get("limit", 10)
+            knowledge_rate_limit.subscription_plan = limit_info.get("subscription_plan", "sandbox")
+        return knowledge_rate_limit
 
     @classmethod
     def get_system_features(cls) -> SystemFeatureModel:
@@ -121,6 +115,9 @@ class FeatureService:
 
             cls._fulfill_params_from_enterprise(system_features)
 
+        if dify_config.MARKETPLACE_ENABLED:
+            system_features.enable_marketplace = True
+
         return system_features
 
     @classmethod
@@ -130,32 +127,14 @@ class FeatureService:
         system_features.enable_social_oauth_login = dify_config.ENABLE_SOCIAL_OAUTH_LOGIN
         system_features.is_allow_register = dify_config.ALLOW_REGISTER
         system_features.is_allow_create_workspace = dify_config.ALLOW_CREATE_WORKSPACE
+        system_features.is_email_setup = dify_config.MAIL_TYPE is not None and dify_config.MAIL_TYPE != ""
 
     @classmethod
     def _fulfill_params_from_env(cls, features: FeatureModel):
         features.can_replace_logo = dify_config.CAN_REPLACE_LOGO
         features.model_load_balancing_enabled = dify_config.MODEL_LB_ENABLED
         features.dataset_operator_enabled = dify_config.DATASET_OPERATOR_ENABLED
-
-    @classmethod
-    def _fulfill_params_from_billing_self_host(cls, features: FeatureModel, tenant_id: str):
-        features.billing.enabled = True
-        features.billing.subscription.plan = "sandbox"
-        features.billing.subscription.interval = "month"
-
-        features.members.size = db.session.query(func.count(TenantAccountJoin.account_id)).filter(TenantAccountJoin.tenant_id == tenant_id).scalar()
-        features.apps.size = db.session.query(func.count(App.id)).filter(App.tenant_id == tenant_id).scalar()
-        features.vector_space.size = db.session.query(func.count(Dataset.id)).filter(Dataset.tenant_id == tenant_id).scalar()
-        features.documents_upload_quota.size = db.session.query(func.count(Document.id)).filter(Document.tenant_id == tenant_id).scalar()
-
-        # Get all app of the tenant, query get only column id
-        apps = db.session.query(App.id).filter(App.tenant_id == tenant_id).all()
-        app_ids = [app.id for app in apps]
-        features.annotation_quota_limit.size = db.session.query(func.count(MessageAnnotation.id)).filter(MessageAnnotation.app_id.in_(app_ids)).scalar()
-
-        features.docs_processing = "standard"
-        features.can_replace_logo = False
-        features.model_load_balancing_enabled = False
+        features.education.enabled = dify_config.EDUCATION_ENABLED
 
     @classmethod
     def _fulfill_params_from_billing_api(cls, features: FeatureModel, tenant_id: str):
@@ -164,6 +143,7 @@ class FeatureService:
         features.billing.enabled = billing_info["enabled"]
         features.billing.subscription.plan = billing_info["subscription"]["plan"]
         features.billing.subscription.interval = billing_info["subscription"]["interval"]
+        features.education.activated = billing_info["subscription"].get("education", False)
 
         if "members" in billing_info:
             features.members.size = billing_info["members"]["size"]
@@ -193,6 +173,9 @@ class FeatureService:
 
         if "model_load_balancing_enabled" in billing_info:
             features.model_load_balancing_enabled = billing_info["model_load_balancing_enabled"]
+
+        if "knowledge_rate_limit" in billing_info:
+            features.knowledge_rate_limit = billing_info["knowledge_rate_limit"]["limit"]
 
     @classmethod
     def _fulfill_params_from_enterprise(cls, features):

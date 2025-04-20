@@ -1,6 +1,6 @@
 from core.variables import SegmentType, Variable
 from core.workflow.entities.node_entities import NodeRunResult
-from core.workflow.nodes.base import BaseNode, BaseNodeData
+from core.workflow.nodes.base import BaseNode
 from core.workflow.nodes.enums import NodeType
 from core.workflow.nodes.variable_assigner.common import helpers as common_helpers
 from core.workflow.nodes.variable_assigner.common.exc import VariableOperatorNodeError
@@ -11,7 +11,7 @@ from .node_data import VariableAssignerData, WriteMode
 
 
 class VariableAssignerNode(BaseNode[VariableAssignerData]):
-    _node_data_cls: type[BaseNodeData] = VariableAssignerData
+    _node_data_cls = VariableAssignerData
     _node_type = NodeType.VARIABLE_ASSIGNER
 
     def _run(self) -> NodeRunResult:
@@ -36,6 +36,8 @@ class VariableAssignerNode(BaseNode[VariableAssignerData]):
 
             case WriteMode.CLEAR:
                 income_value = get_zero_value(original_variable.value_type)
+                if income_value is None:
+                    raise VariableOperatorNodeError("income value not found")
                 updated_variable = original_variable.model_copy(update={"value": income_value.to_object()})
 
             case _:
