@@ -10,7 +10,7 @@ from models.account import Account
 class ApiAccounts(Resource):
     def get(self, account_id=None):
         if account_id:
-            account = Account.query.filter_by(id=account_id).first()
+            account = db.session.query(Account).filter_by(id=account_id).first()
             if account:
                 def account_to_dict(account):
                     return {
@@ -35,7 +35,7 @@ class ApiAccounts(Resource):
             else:
                 return {"status": "error", "message": "Account not found."}, 404
         else:
-            accounts = Account.query.all()
+            accounts = db.session.query(Account).all()
             def account_to_dict(account):
                 return {
                     "id": account.id,
@@ -61,7 +61,7 @@ class ApiAccounts(Resource):
     def put(self):
         accounts = request.json
         for account in accounts:
-            iter_acc = Account.query.get(account["id"])
+            iter_acc = db.session.query(Account).get(account["id"])
             iter_acc.status = account["status"]
             iter_acc.month_before_banned = account["month_before_banned"]
             iter_acc.max_of_apps = account["max_of_apps"]
@@ -76,7 +76,7 @@ class ApiAccounts(Resource):
         }
 
     def delete(self, account_id):
-        account = Account.query.get(account_id)
+        account = db.session.query(Account).get(account_id)
         if account:
             db.session.delete(account)
             db.session.commit()

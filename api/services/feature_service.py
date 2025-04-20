@@ -12,7 +12,7 @@ from models.account import (
     Account,
     Tenant,
     TenantAccountJoin,
-    TenantAccountJoinRole,
+    TenantAccountRole,
 )
 from models.dataset import Dataset, Document
 from models.model import App, MessageAnnotation
@@ -112,7 +112,7 @@ class FeatureService:
     def _fulfill_custom(cls, features: FeatureModel, tenant_id: str):
         join = (
             db.session.query(TenantAccountJoin)
-            .filter(TenantAccountJoin.tenant_id == tenant_id, TenantAccountJoin.role == TenantAccountJoinRole.OWNER.value)
+            .filter(TenantAccountJoin.tenant_id == tenant_id, TenantAccountJoin.role == TenantAccountRole.OWNER.value)
             .first()
         )
         account_owner = (
