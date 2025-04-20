@@ -48,7 +48,11 @@ class RemoteSettingsSourceFactory(PydanticBaseSettingsSource):
         return d
 
 
+from configs.custom import UserAccountDefaultConfig
 class DifyConfig(
+    # Custom
+    UserAccountDefaultConfig,
+
     # Packaging info
     PackagingInfo,
     # Deployment configs

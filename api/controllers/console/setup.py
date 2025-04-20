@@ -15,26 +15,27 @@ from .wraps import only_edition_self_hosted
 
 class SetupApi(Resource):
     def get(self):
-        if dify_config.EDITION == "SELF_HOSTED":
-            setup_status = get_setup_status()
-            if setup_status:
-                return {"step": "finished", "setup_at": setup_status.setup_at.isoformat()}
-            return {"step": "not_started"}
-        return {"step": "finished"}
+        return {"step": "not_started"}
+        # if dify_config.EDITION == "SELF_HOSTED":
+        #     setup_status = get_setup_status()
+        #     if setup_status:
+        #         return {"step": "finished", "setup_at": setup_status.setup_at.isoformat()}
+        #     return {"step": "not_started"}
+        # return {"step": "finished"}
 
     @only_edition_self_hosted
     def post(self):
         # is set up
-        if get_setup_status():
-            raise AlreadySetupError()
+        # if get_setup_status():
+        #     raise AlreadySetupError()
 
         # is tenant created
-        tenant_count = TenantService.get_tenant_count()
-        if tenant_count > 0:
-            raise AlreadySetupError()
+        # tenant_count = TenantService.get_tenant_count()
+        # if tenant_count > 0:
+        #     raise AlreadySetupError()
 
-        if not get_init_validate_status():
-            raise NotInitValidateError()
+        # if not get_init_validate_status():
+        #     raise NotInitValidateError()
 
         parser = reqparse.RequestParser()
         parser.add_argument("email", type=email, required=True, location="json")
@@ -43,9 +44,16 @@ class SetupApi(Resource):
         args = parser.parse_args()
 
         # setup
-        RegisterService.setup(
-            email=args["email"], name=args["name"], password=args["password"], ip_address=extract_remote_ip(request)
-        )
+        # account_count = db.session.query(func.count(Account.id)).scalar()
+        # tenant_count = TenantService.get_tenant_count()
+        if not get_setup_status():
+            RegisterService.setup(
+                email=args["email"], name=args["name"], password=args["password"], ip_address=extract_remote_ip(request)
+            )
+        else:
+            RegisterService.setup_register(
+                email=args["email"], name=args["name"], password=args["password"], ip_address=extract_remote_ip(request)
+            )
 
         return {"result": "success"}, 201
 

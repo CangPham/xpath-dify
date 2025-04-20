@@ -6,6 +6,17 @@ from configs import dify_config
 from services.billing_service import BillingService
 from services.enterprise.enterprise_service import EnterpriseService
 
+from extensions.ext_database import db
+from sqlalchemy import func
+from models.account import (
+    Account,
+    Tenant,
+    TenantAccountJoin,
+    TenantAccountJoinRole,
+)
+from models.dataset import Dataset, Document
+from models.model import App, MessageAnnotation
+
 
 class SubscriptionModel(BaseModel):
     plan: str = "sandbox"
@@ -47,7 +58,7 @@ class FeatureModel(BaseModel):
     members: LimitationModel = LimitationModel(size=0, limit=1)
     apps: LimitationModel = LimitationModel(size=0, limit=10)
     vector_space: LimitationModel = LimitationModel(size=0, limit=5)
-    knowledge_rate_limit: int = 10
+    knowledge_rate_limit: int = 999999
     annotation_quota_limit: LimitationModel = LimitationModel(size=0, limit=10)
     documents_upload_quota: LimitationModel = LimitationModel(size=0, limit=50)
     docs_processing: str = "standard"
@@ -89,10 +100,31 @@ class FeatureService:
 
         cls._fulfill_params_from_env(features)
 
-        if dify_config.BILLING_ENABLED and tenant_id:
-            cls._fulfill_params_from_billing_api(features, tenant_id)
+        # if dify_config.BILLING_ENABLED:
+        #     cls._fulfill_params_from_billing_api(features, tenant_id)
+        cls._fulfill_params_from_billing_self_host(features, tenant_id)
+        
+        cls._fulfill_custom(features, tenant_id)
 
         return features
+
+    @classmethod
+    def _fulfill_custom(cls, features: FeatureModel, tenant_id: str):
+        join = (
+            db.session.query(TenantAccountJoin)
+            .filter(TenantAccountJoin.tenant_id == tenant_id, TenantAccountJoin.role == TenantAccountJoinRole.OWNER.value)
+            .first()
+        )
+        account_owner = (
+            db.session.query(Account)
+            .filter(Account.id == join.account_id)
+            .first()
+        )
+        # Edit the features here
+        features.apps.limit = account_owner.max_of_apps
+        features.vector_space.limit = account_owner.max_vector_space
+        features.annotation_quota_limit.limit = account_owner.max_annotation_quota_limit
+        features.documents_upload_quota.limit = account_owner.max_documents_upload_quota
 
     @classmethod
     def get_knowledge_rate_limit(cls, tenant_id: str):
@@ -135,6 +167,26 @@ class FeatureService:
         features.model_load_balancing_enabled = dify_config.MODEL_LB_ENABLED
         features.dataset_operator_enabled = dify_config.DATASET_OPERATOR_ENABLED
         features.education.enabled = dify_config.EDUCATION_ENABLED
+
+    @classmethod
+    def _fulfill_params_from_billing_self_host(cls, features: FeatureModel, tenant_id: str):
+        features.billing.enabled = True
+        features.billing.subscription.plan = "sandbox"
+        features.billing.subscription.interval = "month"
+
+        features.members.size = db.session.query(func.count(TenantAccountJoin.account_id)).filter(TenantAccountJoin.tenant_id == tenant_id).scalar()
+        features.apps.size = db.session.query(func.count(App.id)).filter(App.tenant_id == tenant_id).scalar()
+        features.vector_space.size = db.session.query(func.count(Dataset.id)).filter(Dataset.tenant_id == tenant_id).scalar()
+        features.documents_upload_quota.size = db.session.query(func.count(Document.id)).filter(Document.tenant_id == tenant_id).scalar()
+
+        # Get all app of the tenant, query get only column id
+        apps = db.session.query(App.id).filter(App.tenant_id == tenant_id).all()
+        app_ids = [app.id for app in apps]
+        features.annotation_quota_limit.size = db.session.query(func.count(MessageAnnotation.id)).filter(MessageAnnotation.app_id.in_(app_ids)).scalar()
+
+        features.docs_processing = "standard"
+        features.can_replace_logo = False
+        features.model_load_balancing_enabled = False
 
     @classmethod
     def _fulfill_params_from_billing_api(cls, features: FeatureModel, tenant_id: str):

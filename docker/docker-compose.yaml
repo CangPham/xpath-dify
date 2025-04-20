@@ -458,7 +458,8 @@ x-shared-env: &shared-api-worker-env
 services:
   # API service
   api:
-    image: langgenius/dify-api:1.2.0
+    # image: langgenius/dify-api:0.7.2
+    image: hota/dify/api
     restart: always
     environment:
       # Use the shared environment variables.
@@ -476,40 +477,62 @@ services:
       - db
       - redis
     volumes:
+      # - ../api:/app/api # Development mode
       # Mount the storage directory to the container, for storing user files.
       - ./volumes/app/storage:/app/api/storage
+      # - ../api/migrations/versions:/app/api/migrations/versions # Development mode
     networks:
       - ssrf_proxy_network
       - default
+    build:
+      context: ../api
+      dockerfile: Dockerfile
 
   # worker service
   # The Celery worker for processing the queue.
   worker:
-    image: langgenius/dify-api:1.2.0
+    # image: langgenius/dify-api:0.7.2
+    image: hota/dify/api
     restart: always
     environment:
       # Use the shared environment variables.
       <<: *shared-api-worker-env
       # Startup mode, 'worker' starts the Celery worker for processing the queue.
       MODE: worker
-      SENTRY_DSN: ${API_SENTRY_DSN:-}
-      SENTRY_TRACES_SAMPLE_RATE: ${API_SENTRY_TRACES_SAMPLE_RATE:-1.0}
-      SENTRY_PROFILES_SAMPLE_RATE: ${API_SENTRY_PROFILES_SAMPLE_RATE:-1.0}
-      PLUGIN_MAX_PACKAGE_SIZE: ${PLUGIN_MAX_PACKAGE_SIZE:-52428800}
-      INNER_API_KEY_FOR_PLUGIN: ${PLUGIN_DIFY_INNER_API_KEY:-QaHbTe77CtuXmsfyhR7+vRjI/+XbV1AaFy691iy+kGDv2Jvy0/eAh8Y1}
     depends_on:
       - db
       - redis
     volumes:
+      # - ../api:/app/api # Development mode
       # Mount the storage directory to the container, for storing user files.
       - ./volumes/app/storage:/app/api/storage
+      # - ../api/migrations/versions:/app/api/migrations/versions # Development mode
     networks:
       - ssrf_proxy_network
       - default
+    build:
+      context: ../api
+      dockerfile: Dockerfile
+
+  # Custom dashboard service
+  dashboard:
+    image: hota/dify/dashboard
+    restart: always
+    environment:
+      API_URL: "http://api:5001"
+    networks:
+      - ssrf_proxy_network
+      - default
+    # volumes:
+    #   - ../dashboard:/app/dashboard # Development mode
+    build:
+      context: ../dashboard
+      dockerfile: Dockerfile
 
   # Frontend web application.
   web:
-    image: langgenius/dify-web:1.2.0
+    # image: langgenius/dify-web:0.7.2
+    image: hota/dify/web
     restart: always
     environment:
       CONSOLE_API_URL: ${CONSOLE_API_URL:-}
@@ -527,6 +550,9 @@ services:
       MAX_TOOLS_NUM: ${MAX_TOOLS_NUM:-10}
       MAX_PARALLEL_LIMIT: ${MAX_PARALLEL_LIMIT:-10}
       MAX_ITERATIONS_NUM: ${MAX_ITERATIONS_NUM:-5}
+    build:
+      context: ../web
+      dockerfile: Dockerfile
 
   # The postgres database.
   db:
@@ -713,6 +739,11 @@ services:
     ports:
       - '${EXPOSE_NGINX_PORT:-80}:${NGINX_PORT:-80}'
       - '${EXPOSE_NGINX_SSL_PORT:-443}:${NGINX_SSL_PORT:-443}'
+      - '5001:5001'
+      - '8501:8501'
+    networks:
+      - ssrf_proxy_network
+      - default
 
   # The Weaviate vector store.
   weaviate:
@@ -1029,11 +1060,10 @@ services:
     container_name: elasticsearch
     profiles:
       - elasticsearch
-      - elasticsearch-ja
     restart: always
     volumes:
       - ./elasticsearch/docker-entrypoint.sh:/docker-entrypoint-mount.sh
-      - dify_es01_data:/usr/share/elasticsearch/data
+      - ProAI_es01_data:/usr/share/elasticsearch/data
     environment:
       ELASTIC_PASSWORD: ${ELASTICSEARCH_PASSWORD:-elastic}
       VECTOR_STORE: ${VECTOR_STORE:-}
@@ -1108,4 +1138,4 @@ networks:
 
 volumes:
   oradata:
-  dify_es01_data:
+  ProAI_es01_data:

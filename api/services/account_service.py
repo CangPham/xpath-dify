@@ -152,6 +152,12 @@ class AccountService:
 
         if account.status == AccountStatus.BANNED.value:
             raise AccountLoginError("Account is banned.")
+        
+        # Compare account.created_at + account.month_before_banned months with current time
+        if int(account.month_before_banned) > 0 and account.created_at + timedelta(days=int(account.month_before_banned) * 30) < datetime.now(UTC).replace(tzinfo=None):
+            account.status = AccountStatus.BANNED.value
+            db.session.commit()
+            raise AccountLoginError("Account is banned.")
 
         if password and invite_token and account.password is None:
             # if invite_token is valid, set password and password_salt
@@ -836,6 +842,36 @@ class RegisterService:
     @classmethod
     def _get_invitation_token_key(cls, token: str) -> str:
         return f"member_invite:token:{token}"
+    
+    @staticmethod
+    def setup_register(email: str, name: str, password: str, ip_address: str) -> None:
+        """
+        Setup dify
+
+        :param email: email
+        :param name: username
+        :param password: password
+        :param ip_address: ip address
+        """
+        try:
+            # Register
+            account = AccountService.create_account(
+                email=email,
+                name=name,
+                interface_language=languages[0],
+                password=password,
+                is_setup=True,
+            )
+
+            account.last_login_ip = ip_address
+            account.initialized_at = datetime.now(UTC).replace(tzinfo=None)
+
+            TenantService.create_owner_tenant_if_not_exist(account=account, is_setup=True)
+
+            db.session.commit()
+        except Exception as e:
+            logging.exception(f"Setup failed: {e}")
+            raise ValueError(f"Setup failed: {e}")
 
     @classmethod
     def setup(cls, email: str, name: str, password: str, ip_address: str) -> None:

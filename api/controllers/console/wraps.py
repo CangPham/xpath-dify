@@ -203,9 +203,9 @@ def setup_required(view):
 def enterprise_license_required(view):
     @wraps(view)
     def decorated(*args, **kwargs):
-        settings = FeatureService.get_system_features()
-        if settings.license.status in [LicenseStatus.INACTIVE, LicenseStatus.EXPIRED, LicenseStatus.LOST]:
-            raise UnauthorizedAndForceLogout("Your license is invalid. Please contact your administrator.")
+        # settings = FeatureService.get_system_features()
+        # if settings.license.status in [LicenseStatus.INACTIVE, LicenseStatus.EXPIRED, LicenseStatus.LOST]:
+        #     raise UnauthorizedAndForceLogout("Your license is invalid. Please contact your administrator.")
 
         return view(*args, **kwargs)
 

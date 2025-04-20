@@ -87,7 +87,6 @@ class AccountProfileApi(Resource):
     @login_required
     @account_initialization_required
     @marshal_with(account_fields)
-    @enterprise_license_required
     def get(self):
         return current_user
 

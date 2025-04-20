@@ -1,7 +1,7 @@
 """add_created_at_index_for_messages
 
 Revision ID: 01d6889832f7
-Revises: 09a8d1878d9b
+Revises: c3894341ba4f
 Create Date: 2024-11-12 09:25:05.527827
 
 """
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '01d6889832f7'
-down_revision = '09a8d1878d9b'
+down_revision = 'c3894341ba4f'
 branch_labels = None
 depends_on = None
 
