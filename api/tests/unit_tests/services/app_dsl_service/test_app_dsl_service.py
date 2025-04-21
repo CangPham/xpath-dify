@@ -1,7 +1,6 @@
 import pytest
 from packaging import version
 
-from services.app_dsl_service import AppDslService
 from services.app_dsl_service.exc import DSLVersionNotSupportedError
 from services.app_dsl_service.service import _check_or_fix_dsl, current_dsl_version
 

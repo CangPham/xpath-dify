@@ -1,11 +1,10 @@
-from flask_restful import Resource
 from flask import jsonify, request
+from flask_restful import Resource
 
-from extensions.ext_database import db
 from controllers.dashboard import api
-from controllers.dashboard.json import jsonify_sqlalchemy
-
+from extensions.ext_database import db
 from models.account import Account
+
 
 def account_to_dict(account):
     return {

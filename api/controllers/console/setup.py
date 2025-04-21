@@ -5,11 +5,9 @@ from configs import dify_config
 from libs.helper import StrLen, email, extract_remote_ip
 from libs.password import valid_password
 from models.model import DifySetup, db
-from services.account_service import RegisterService, TenantService
+from services.account_service import RegisterService
 
 from . import api
-from .error import AlreadySetupError, NotInitValidateError
-from .init_validate import get_init_validate_status
 from .wraps import only_edition_self_hosted
 
 

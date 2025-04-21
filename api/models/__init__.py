@@ -68,6 +68,7 @@ from .provider import (
     TenantPreferredModelProvider,
 )
 from .source import DataSourceApiKeyAuthBinding, DataSourceOauthBinding
+from .system_custom_info import SystemCustomInfo
 from .task import CeleryTask, CeleryTaskSet
 from .tools import (
     ApiToolProvider,
@@ -91,8 +92,6 @@ from .workflow import (
     WorkflowRunStatus,
     WorkflowType,
 )
-
-from .system_custom_info import SystemCustomInfo
 
 __all__ = [
     "APIBasedExtension",

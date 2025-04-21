@@ -8,11 +8,11 @@ def init_app(app: DifyApp):
     from flask_cors import CORS  # type: ignore
 
     from controllers.console import bp as console_app_bp
+    from controllers.dashboard import bp as dashboard_bp
     from controllers.files import bp as files_bp
     from controllers.inner_api import bp as inner_api_bp
     from controllers.service_api import bp as service_api_bp
     from controllers.web import bp as web_bp
-    from controllers.dashboard import bp as dashboard_bp
 
     CORS(
         service_api_bp,

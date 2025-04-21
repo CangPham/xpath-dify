@@ -5,13 +5,12 @@ from flask_login import UserMixin  # type: ignore
 from sqlalchemy import func
 from sqlalchemy.orm import Mapped, mapped_column
 
+from configs import dify_config
 from models.base import Base
 
 from .engine import db
 from .types import StringUUID
-from controllers.dashboard.plan import FeatureModel
 
-from configs import dify_config
 
 class AccountStatus(enum.StrEnum):
     PENDING = "pending"

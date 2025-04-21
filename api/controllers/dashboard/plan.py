@@ -1,14 +1,11 @@
-import uuid
-from flask_restful import Resource
 from flask import jsonify, request
+from flask_restful import Resource
+from pydantic import BaseModel
 
-from extensions.ext_database import db
-from controllers.dashboard import api
-from controllers.dashboard.json import jsonify_sqlalchemy
-
-from models.system_custom_info import SystemCustomInfo
-from pydantic import BaseModel, ConfigDict
 from configs import dify_config
+from extensions.ext_database import db
+from models.system_custom_info import SystemCustomInfo
+
 
 class FeatureModel(BaseModel):
     members: int = 1

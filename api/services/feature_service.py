@@ -1,21 +1,19 @@
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
+from sqlalchemy import func
 
 from configs import dify_config
-from services.billing_service import BillingService
-from services.enterprise.enterprise_service import EnterpriseService
-
 from extensions.ext_database import db
-from sqlalchemy import func
 from models.account import (
     Account,
-    Tenant,
     TenantAccountJoin,
     TenantAccountRole,
 )
 from models.dataset import Dataset, Document
 from models.model import App, MessageAnnotation
+from services.billing_service import BillingService
+from services.enterprise.enterprise_service import EnterpriseService
 
 
 class SubscriptionModel(BaseModel):

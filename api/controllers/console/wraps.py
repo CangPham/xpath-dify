@@ -12,10 +12,10 @@ from extensions.ext_database import db
 from extensions.ext_redis import redis_client
 from models.dataset import RateLimitLog
 from models.model import DifySetup
-from services.feature_service import FeatureService, LicenseStatus
+from services.feature_service import FeatureService
 from services.operation_service import OperationService
 
-from .error import NotInitValidateError, NotSetupError, UnauthorizedAndForceLogout
+from .error import NotInitValidateError, NotSetupError
 
 
 def account_initialization_required(view):

@@ -1,8 +1,8 @@
 from flask_restful import Resource
-from flask import jsonify, request
 
-from extensions.ext_database import db
 from controllers.dashboard import api
+from extensions.ext_database import db
+
 
 class ApiReset(Resource):
     def get(self):

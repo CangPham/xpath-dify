@@ -1,4 +1,3 @@
-from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import JSONB
 
 from models.base import Base

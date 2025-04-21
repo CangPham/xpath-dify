@@ -6,7 +6,5 @@ bp = Blueprint("dashboard", __name__, url_prefix="/dashboard")
 api = ExternalApi(bp)
 
 
-from . import index
-from . import accounts
-from . import plan
+from . import accounts, index, plan
 # from . import reset

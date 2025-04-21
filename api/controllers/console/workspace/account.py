@@ -18,7 +18,6 @@ from controllers.console.workspace.error import (
 from controllers.console.wraps import (
     account_initialization_required,
     cloud_edition_billing_enabled,
-    enterprise_license_required,
     only_edition_cloud,
     setup_required,
 )
