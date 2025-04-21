@@ -477,7 +477,9 @@ services:
       - db
       - redis
     volumes:
-      # - ../api:/app/api # Development mode
+      - ../api:/app/api # Development mode
+      - ../api/docker/entrypoint.sh:/app/api/entrypoint.sh # Development mode
+      - api_venv:/app/api/.venv
       # Mount the storage directory to the container, for storing user files.
       - ./volumes/app/storage:/app/api/storage
       # - ../api/migrations/versions:/app/api/migrations/versions # Development mode
@@ -503,7 +505,9 @@ services:
       - db
       - redis
     volumes:
-      # - ../api:/app/api # Development mode
+      - ../api:/app/api # Development mode
+      - ../api/docker/entrypoint.sh:/app/api/entrypoint.sh # Development mode
+      - api_venv:/app/api/.venv
       # Mount the storage directory to the container, for storing user files.
       - ./volumes/app/storage:/app/api/storage
       # - ../api/migrations/versions:/app/api/migrations/versions # Development mode
@@ -523,8 +527,8 @@ services:
     networks:
       - ssrf_proxy_network
       - default
-    # volumes:
-    #   - ../dashboard:/app/dashboard # Development mode
+    volumes:
+      - ../dashboard:/app/dashboard # Development mode
     build:
       context: ../dashboard
       dockerfile: Dockerfile
@@ -1141,3 +1145,4 @@ networks:
 volumes:
   oradata:
   ProAI_es01_data:
+  api_venv:

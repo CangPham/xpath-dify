@@ -47,7 +47,7 @@ class Account(UserMixin, Base):
 
     # Custom fields
     month_before_banned = db.Column(db.Integer, nullable=False, server_default=db.text(str(dify_config.user_account_month_before_banned)))
-    id_custom_plan = db.Column(db.String(255), nullable=False, server_default=db.text(""))
+    id_custom_plan = db.Column(db.String(255))
     plan_expiration = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
     max_of_apps = db.Column(db.Integer, nullable=False, server_default=db.text(str(dify_config.user_account_max_of_apps)))
     max_vector_space = db.Column(db.Integer, nullable=False, server_default=db.text(str(dify_config.user_account_max_vector_space)))

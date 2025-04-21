@@ -1,7 +1,9 @@
 from flask import jsonify, request
 from flask_restful import Resource
 from pydantic import BaseModel
+from datetime import date
 
+from controllers.dashboard import api
 from configs import dify_config
 from extensions.ext_database import db
 from models.system_custom_info import SystemCustomInfo
@@ -20,6 +22,7 @@ class PlanModel(BaseModel):
     name: str
     description: str
     price: float
+    plan_expiration: int   # number of days until expiration
     features: FeatureModel
 
 class ApiPlan(Resource):
@@ -40,14 +43,24 @@ class ApiPlan(Resource):
             db.session.commit()
         else:
             # Convert the value from list[json] to list[PlanModel]
-            object_plans = [PlanModel.model_validate(plan) for plan in system_custom_info.value]
+            # Skip plans with string expiration date
+            raw_plans = system_custom_info.value
+            list_of_plans = []
+            for plan in raw_plans:
+                exp = plan.get("plan_expiration")
+                if isinstance(exp, str):
+                    continue
+                list_of_plans.append(plan)
+            object_plans = [PlanModel.model_validate(plan) for plan in list_of_plans]
         
-        return jsonify([plan.dict() for plan in object_plans])
+        # Pydantic v2 uses model_dump() instead of dict()
+        return jsonify([plan.model_dump(mode='json') for plan in object_plans])
     
     def put(self):
         # Get the request data
         data = request.get_json()
 
+        # Pydantic v2 uses model_validate
         plans = [PlanModel.model_validate(plan) for plan in data]
         # Get the existing system custom info
         system_custom_info = db.session.query(SystemCustomInfo).filter(
@@ -59,7 +72,8 @@ class ApiPlan(Resource):
             system_custom_info = SystemCustomInfo(name="plan", value=[])
         
         # Update the existing plans with the new data
-        system_custom_info.value = [plan.dict() for plan in plans]
+        # Pydantic v2 uses model_dump() instead of dict()
+        system_custom_info.value = [plan.model_dump(mode='json') for plan in plans]
 
         # Commit the changes to the database
         db.session.add(system_custom_info)
@@ -67,3 +81,5 @@ class ApiPlan(Resource):
 
         # Return a success message
         return jsonify({"status": "success", "message": "Plan updated successfully."})
+    
+api.add_resource(ApiPlan, "/plans")

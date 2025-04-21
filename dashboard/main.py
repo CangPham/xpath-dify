@@ -5,9 +5,9 @@ import requests
 import streamlit as st
 import streamlit_authenticator as stauth
 import uuid
+from yaml.loader import SafeLoader
 
 import yaml
-from yaml.loader import SafeLoader
 
 with open("./config.yaml") as file:
     config = yaml.load(file, Loader=SafeLoader)
@@ -48,16 +48,8 @@ if st.session_state['authentication_status']:
             st.error(f"Failed to load plans: {res.status_code} {res.text}")
             return []
 
-    def add_plan(plan_data):
-        res = requests.post(f"{api_url}/plans", json=plan_data)
-        return res
-
     def update_plans(plans_data):
         res = requests.put(f"{api_url}/plans", json=plans_data)
-        return res
-
-    def delete_plan(plan_id):
-        res = requests.delete(f"{api_url}/plans/{plan_id}")
         return res
 
     # Sidebar
@@ -103,6 +95,9 @@ if st.session_state['authentication_status']:
         
         df = df.sort_values(by=['created_at'])
 
+        # Convert plan_expiration strings to datetime for editing
+        df['plan_expiration'] = pd.to_datetime(df['plan_expiration'])
+
         # Show accounts
         edited_df = st.data_editor(
             df,
@@ -113,12 +108,12 @@ if st.session_state['authentication_status']:
                     options=["pending", "uninitialized", "active", "banned", "closed"],
                     required=True,
                 ),
-                "id_custom_plan": st.column_config.StringColumn(
+                "id_custom_plan": st.column_config.TextColumn(  # replaced StringColumn -> TextColumn
                     "id_custom_plan",
                     help="The ID of the custom plan",
                     required=True,
                 ),
-                "plan_expiration": st.column_config.DateInputColumn(
+                "plan_expiration": st.column_config.DatetimeColumn(
                     "plan_expiration",
                     help="The date when the plan expires",
                     required=True,
@@ -211,149 +206,141 @@ if st.session_state['authentication_status']:
 
         # Get plans from API
         with st.spinner("Loading plans..."):
-            plans = get_plans()
+            plans_data = get_plans()
 
-        if not plans:
+        if 'plans_df' not in st.session_state or st.session_state.plans_data != plans_data:
+            st.session_state.plans_data = plans_data
+            # Convert nested features dict to separate columns for editing
+            flat_plans = []
+            for plan in plans_data:
+                flat_plan = plan.copy()
+                features = flat_plan.pop('features', {})
+                flat_plan.update(features)
+                flat_plans.append(flat_plan)
+            st.session_state.plans_df = pd.DataFrame(flat_plans)
+            # Ensure plan_expiration is integer days
+            if 'plan_expiration' in st.session_state.plans_df.columns:
+                st.session_state.plans_df['plan_expiration'] = st.session_state.plans_df['plan_expiration'].astype(int)
+
+
+        if st.session_state.plans_df.empty:
             st.warning("No plans found or failed to load.")
-        
-        # Define expected columns, including 'order' for arrangement
-        plan_columns = [
-            "id",
-            "name",
-            "price",
-            "features",
-            "order",
-            "is_active",
-            "created_at",
-            "updated_at"
-        ]
-        
-        # Load to dataframe, ensuring all columns exist, filling missing with defaults if necessary
-        df_plans = pd.DataFrame(plans)
-        for col in plan_columns:
-            if col not in df_plans.columns:
-                if col == 'order':
-                    df_plans[col] = 0
-                elif col == 'is_active':
-                    df_plans[col] = True
-                elif col in ['price']:
-                    df_plans[col] = 0.0
-                else:
-                    df_plans[col] = None
+            # Optionally allow creating the first plan
+            if st.button("Add First Plan"):
+                 # Add a default row to the DataFrame in session state
+                default_features = {
+                    "members": 1,
+                    "apps": 10,
+                    "vector_space": 100,
+                    "knowledge_rate_limit": 10,
+                    "annotation_quota_limit": 100,
+                    "documents_upload_quota": 50
+                }
+                new_plan_row = pd.DataFrame([{
+                    "id": str(uuid.uuid4()),
+                    "name": "New Plan",
+                    "description": "Default description",
+                    "price": 0.0,
+                    "plan_expiration": 30,  # default days
+                    **default_features
+                }])
+                st.session_state.plans_df = pd.concat([st.session_state.plans_df, new_plan_row], ignore_index=True)
+                st.rerun()
 
-        # Reorder columns for display
-        df_plans = df_plans[plan_columns]
+        else:
+            st.info("Edit plan details below. Click 'Add New Plan' to add a row, then 'Save Changes' to update all plans.")
 
-        # Sort by 'order' column for display
-        df_plans = df_plans.sort_values(by=['order', 'created_at'])
+            edited_plans_df = st.data_editor(
+                st.session_state.plans_df,
+                column_config={
+                    "id": st.column_config.TextColumn("ID (read-only)", disabled=True),
+                    "name": st.column_config.TextColumn("Name", required=True),
+                    "description": st.column_config.TextColumn("Description"),
+                    "price": st.column_config.NumberColumn("Price", format="%.2f", required=True),
+                    "plan_expiration": st.column_config.NumberColumn(
+                        "Expiration Days",
+                        help="Number of days until expiration",
+                        required=True,
+                        min_value=0
+                    ),
+                    "members": st.column_config.NumberColumn("Members Limit", required=True, min_value=1),
+                    "apps": st.column_config.NumberColumn("Apps Limit", required=True, min_value=0),
+                    "vector_space": st.column_config.NumberColumn("Vector Space (MB)", required=True, min_value=0),
+                    "knowledge_rate_limit": st.column_config.NumberColumn("Knowledge Rate Limit", required=True, min_value=0),
+                    "annotation_quota_limit": st.column_config.NumberColumn("Annotation Quota Limit", required=True, min_value=0),
+                    "documents_upload_quota": st.column_config.NumberColumn("Docs Upload Quota", required=True, min_value=0),
+                },
+                hide_index=True,
+                num_rows="dynamic",
+                
+                key="plan_editor"
+            )
 
-        st.markdown("### Edit Plans")
-        edited_df_plans = st.data_editor(
-            df_plans,
-            column_config={
-                "id": st.column_config.TextColumn("ID", disabled=True),
-                "name": st.column_config.TextColumn("Name", required=True),
-                "price": st.column_config.NumberColumn("Price", format="$%.2f", required=True),
-                "features": st.column_config.TextColumn("Features (comma-separated)", required=False),
-                "order": st.column_config.NumberColumn("Order", help="Position in list (lower numbers first)", required=True, step=1),
-                "is_active": st.column_config.CheckboxColumn("Active?", required=True),
-                "created_at": st.column_config.DatetimeColumn("Created", disabled=True, format="YYYY-MM-DD HH:mm:ss"),
-                "updated_at": st.column_config.DatetimeColumn("Updated", disabled=True, format="YYYY-MM-DD HH:mm:ss"),
-            },
-            disabled=[
-                "id",
-                "created_at",
-                "updated_at"
-            ],
-            hide_index=True,
-            num_rows="dynamic",
-        )
+            # Check if changes were made
+            original_df_dict = st.session_state.plans_df.to_dict(orient="records")
+            edited_df_dict = edited_plans_df.to_dict(orient="records")
 
-        # Save changes (Edits and Reordering via PUT)
-        edited_plans_list = edited_df_plans.to_dict(orient="records")
+            col1, col2 = st.columns(2)
+            with col1:
+                 # Button to add a new plan row to the editor
+                if st.button("Add New Plan Row"):
+                    default_features = {
+                        "members": 1,
+                        "apps": 10,
+                        "vector_space": 100,
+                        "knowledge_rate_limit": 10,
+                        "annotation_quota_limit": 100,
+                        "documents_upload_quota": 50
+                    }
+                    new_id = str(uuid.uuid4())
+                    # Add to the DataFrame being edited
+                    new_plan_row = pd.DataFrame([{
+                        "id": new_id,
+                        "name": "New Plan",
+                        "description": "Enter description",
+                        "price": 0.0,
+                        "plan_expiration": 30,  # default days
+                        **default_features
+                    }])
+                    # Update the session state DataFrame directly for the editor
+                    st.session_state.plans_df = pd.concat([edited_plans_df, new_plan_row], ignore_index=True)
+                    st.rerun()
 
-        if df_plans.to_dict(orient="records") != edited_plans_list:
-            if st.button("Save Plan Changes"):
-                with st.spinner("Saving plan changes..."):
-                    for plan in edited_plans_list:
-                        if 'price' in plan and plan['price'] is not None:
-                            try:
-                                plan['price'] = float(plan['price'])
-                            except (ValueError, TypeError):
-                                st.error(f"Invalid price format for plan {plan.get('name', plan.get('id'))}")
-                                st.stop()
-                        if 'order' in plan and plan['order'] is not None:
-                            try:
-                                plan['order'] = int(plan['order'])
-                            except (ValueError, TypeError):
-                                st.error(f"Invalid order format for plan {plan.get('name', plan.get('id'))}")
-                                st.stop()
+            with col2:
+                # Save changes button (only active if changes detected)
+                save_disabled = original_df_dict == edited_df_dict
+                if st.button("Save Changes", disabled=save_disabled):
+                    # Reconstruct the nested structure expected by the API
+                    plans_to_save = []
+                    for _, row in edited_plans_df.iterrows():
+                        plan_dict = row.to_dict()
+                        features = {
+                            "members": int(plan_dict.pop("members")),
+                            "apps": int(plan_dict.pop("apps")),
+                            "vector_space": int(plan_dict.pop("vector_space")),
+                            "knowledge_rate_limit": int(plan_dict.pop("knowledge_rate_limit")),
+                            "annotation_quota_limit": int(plan_dict.pop("annotation_quota_limit")),
+                            "documents_upload_quota": int(plan_dict.pop("documents_upload_quota"))
+                        }
+                        # Number of days until expiration
+                        plan_dict['plan_expiration'] = int(plan_dict['plan_expiration'])
+                        plan_dict['features'] = features
+                        # Ensure price is float
+                        plan_dict['price'] = float(plan_dict['price'])
+                        plans_to_save.append(plan_dict)
 
-                    res = update_plans(edited_plans_list)
+                    res = update_plans(plans_to_save)
+
                     if res.status_code == 200:
-                        st.success("Plan changes saved successfully.")
+                        st.success("Plans updated successfully.")
+                        # Update session state with the saved data and rerun
+                        st.session_state.plans_data = plans_to_save
+                        st.session_state.plans_df = edited_plans_df
+                        time.sleep(1)
                         st.rerun()
                     else:
-                        st.error(f"Failed to save plan changes: {res.status_code} {res.text}")
+                        st.error(f"Failed to save plans: {res.status_code} {res.text}")
                         time.sleep(2)
-
-        # Add New Plan Form
-        st.markdown("### Add New Plan")
-        with st.form("add_plan_form", clear_on_submit=True):
-            new_name = st.text_input("Plan Name", key="add_name")
-            new_price = st.number_input("Price", min_value=0.0, format="%.2f", key="add_price")
-            new_features = st.text_area("Features (comma-separated)", key="add_features")
-            new_order = st.number_input("Order", min_value=0, step=1, value=(max(df_plans['order']) + 10) if not df_plans.empty else 0, key="add_order")
-            new_is_active = st.checkbox("Is Active?", value=True, key="add_active")
-            add_submit_button = st.form_submit_button("Add Plan")
-
-            if add_submit_button:
-                if new_name:
-                    new_plan_data = {
-                        "name": new_name,
-                        "price": new_price,
-                        "features": new_features,
-                        "order": new_order,
-                        "is_active": new_is_active
-                    }
-                    with st.spinner("Adding new plan..."):
-                        res = add_plan(new_plan_data)
-                        try:
-                            res_data = res.json()
-                            if res.status_code == 200 or res.status_code == 201:
-                                st.success(f"Plan '{new_name}' added successfully.")
-                                st.rerun()
-                            else:
-                                st.error(f"Error adding plan: {res_data.get('message', res.text)}")
-                        except Exception as e:
-                            st.error(f"Failed to process response: {res.text} | Error: {e}")
-                else:
-                    st.error("Plan Name is required.")
-
-        # Delete Plan Form
-        st.markdown("### Delete Plan")
-        with st.form("delete_plan_form"):
-            plan_options = {f"{plan['name']} (ID: {plan['id']})": plan['id'] for plan in plans}
-            selected_plan_display = st.selectbox("Select Plan to Delete", options=plan_options.keys())
-            delete_submit_button = st.form_submit_button("Delete Selected Plan")
-
-            if delete_submit_button and selected_plan_display:
-                delete_id = plan_options[selected_plan_display]
-                st.warning(f"Are you sure you want to delete plan '{selected_plan_display}'?")
-                if st.button("Confirm Deletion", key=f"confirm_delete_{delete_id}"):
-                    with st.spinner(f"Deleting plan {delete_id}..."):
-                        res = delete_plan(delete_id)
-                        try:
-                            if res.status_code == 200 or res.status_code == 204:
-                                st.success(f"Plan {delete_id} deleted successfully.")
-                                st.rerun()
-                            else:
-                                resjson = res.json()
-                                st.error(f"Error deleting plan: {resjson.get('message', res.text)}")
-                        except Exception as e:
-                            st.error(f"Failed to delete plan: {res.status_code} {res.text} | Error: {e}")
-            elif delete_submit_button:
-                st.error("Please select a plan to delete.")
 
 else:
     st.warning("Please log in to access the dashboard.")
