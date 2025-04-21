@@ -92,6 +92,8 @@ from .workflow import (
     WorkflowType,
 )
 
+from .system_custom_info import SystemCustomInfo
+
 __all__ = [
     "APIBasedExtension",
     "APIBasedExtensionPoint",
@@ -180,4 +182,6 @@ __all__ = [
     "WorkflowToolProvider",
     "WorkflowType",
     "db",
+    # Custom addition
+    "SystemCustomInfo",
 ]

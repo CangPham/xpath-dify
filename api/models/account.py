@@ -9,6 +9,7 @@ from models.base import Base
 
 from .engine import db
 from .types import StringUUID
+from controllers.dashboard.plan import FeatureModel
 
 from configs import dify_config
 
@@ -47,6 +48,7 @@ class Account(UserMixin, Base):
     max_vector_space = db.Column(db.Integer, nullable=False, server_default=db.text(str(dify_config.user_account_max_vector_space)))
     max_annotation_quota_limit = db.Column(db.Integer, nullable=False, server_default=db.text(str(dify_config.user_account_max_annotation_quota_limit)))
     max_documents_upload_quota = db.Column(db.Integer, nullable=False, server_default=db.text(str(dify_config.user_account_max_documents_upload_quota)))
+    # feature_limit = db.Column(db.JSONB, nullable=False, server_default=db.text("'{}'::jsonb"))
 
     @property
     def is_password_set(self):

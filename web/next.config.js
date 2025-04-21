@@ -16,8 +16,15 @@ const withMDX = require('@next/mdx')({
 const nextConfig = {
   webpack: (config, { dev, isServer }) => {
     config.plugins.push(codeInspectorPlugin({ bundler: 'webpack' }))
+    // if (dev) {
+    //   config.watchOptions = {
+    //     poll: 1000, // kiểm tra thay đổi mỗi 1 giây
+    //     aggregateTimeout: 300,
+    //   }
+    // }
     return config
   },
+
   productionBrowserSourceMaps: false, // enable browser source map generation during the production build
   // Configure pageExtensions to include md and mdx
   pageExtensions: ['ts', 'tsx', 'js', 'jsx', 'md', 'mdx'],

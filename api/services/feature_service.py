@@ -58,7 +58,7 @@ class FeatureModel(BaseModel):
     members: LimitationModel = LimitationModel(size=0, limit=1)
     apps: LimitationModel = LimitationModel(size=0, limit=10)
     vector_space: LimitationModel = LimitationModel(size=0, limit=5)
-    knowledge_rate_limit: int = 999999
+    knowledge_rate_limit: int = 10
     annotation_quota_limit: LimitationModel = LimitationModel(size=0, limit=10)
     documents_upload_quota: LimitationModel = LimitationModel(size=0, limit=50)
     docs_processing: str = "standard"
@@ -134,7 +134,8 @@ class FeatureService:
             limit_info = BillingService.get_knowledge_rate_limit(tenant_id)
             knowledge_rate_limit.limit = limit_info.get("limit", 10)
             knowledge_rate_limit.subscription_plan = limit_info.get("subscription_plan", "sandbox")
-        return knowledge_rate_limit
+        # return knowledge_rate_limit
+        return 10000
 
     @classmethod
     def get_system_features(cls) -> SystemFeatureModel:
