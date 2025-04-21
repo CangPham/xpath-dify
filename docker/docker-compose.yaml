@@ -553,8 +553,8 @@ services:
     build:
       context: ../web
       dockerfile: Dockerfile
-    # volumes:
-    #   - ../web/app:/app/web/app # Development mode
+    volumes:
+      - ../web/app:/app/web/app # Development mode
 
   # The postgres database.
   db:

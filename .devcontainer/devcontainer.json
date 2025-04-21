@@ -6,10 +6,6 @@
 		"context": "..",
 		"dockerfile": "Dockerfile"
 	},
-	"workspaceFolder": "/workspaces/dify",
-	"mounts": [
-		"source=${localWorkspaceFolder},target=/workspaces/dify,type=bind,consistency=cached"
-	],
 	"features": {
 		"ghcr.io/devcontainers/features/node:1": {
 			"nodeGypDependencies": true,

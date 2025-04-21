@@ -7,55 +7,39 @@ from controllers.dashboard.json import jsonify_sqlalchemy
 
 from models.account import Account
 
+def account_to_dict(account):
+    return {
+        "id": account.id,
+        "name": account.name,
+        "email": account.email,
+        "status": account.status,
+
+        "id_custom_plan": account.id_custom_plan,
+        "plan_expiration": account.plan_expiration,
+        "month_before_banned": account.month_before_banned,
+        "max_of_apps": account.max_of_apps,
+        "max_vector_space": account.max_vector_space,
+        "max_annotation_quota_limit": account.max_annotation_quota_limit,
+        "max_documents_upload_quota": account.max_documents_upload_quota,
+
+        "last_login_at": account.last_login_at,
+        "last_login_ip": account.last_login_ip,
+        "last_active_at": account.last_active_at,
+        "created_at": account.created_at,
+        "updated_at": account.updated_at
+    }
+
 class ApiAccounts(Resource):
     def get(self, account_id=None):
         if account_id:
             account = db.session.query(Account).filter_by(id=account_id).first()
             if account:
-                def account_to_dict(account):
-                    return {
-                        "id": account.id,
-                        "name": account.name,
-                        "email": account.email,
-                        "status": account.status,
-
-                        "month_before_banned": account.month_before_banned,
-                        "max_of_apps": account.max_of_apps,
-                        "max_vector_space": account.max_vector_space,
-                        "max_annotation_quota_limit": account.max_annotation_quota_limit,
-                        "max_documents_upload_quota": account.max_documents_upload_quota,
-
-                        "last_login_at": account.last_login_at,
-                        "last_login_ip": account.last_login_ip,
-                        "last_active_at": account.last_active_at,
-                        "created_at": account.created_at,
-                        "updated_at": account.updated_at
-                    }
+                
                 return jsonify(account_to_dict(account))
             else:
                 return {"status": "error", "message": "Account not found."}, 404
         else:
             accounts = db.session.query(Account).all()
-            def account_to_dict(account):
-                return {
-                    "id": account.id,
-                    "name": account.name,
-                    "email": account.email,
-                    "status": account.status,
-                    
-                    "month_before_banned": account.month_before_banned,
-                    "max_of_apps": account.max_of_apps,
-                    "max_vector_space": account.max_vector_space,
-                    "max_annotation_quota_limit": account.max_annotation_quota_limit,
-                    "max_documents_upload_quota": account.max_documents_upload_quota,
-
-                    "max_of_apps": account.max_of_apps,
-                    "last_login_at": account.last_login_at,
-                    "last_login_ip": account.last_login_ip,
-                    "last_active_at": account.last_active_at,
-                    "created_at": account.created_at,
-                    "updated_at": account.updated_at
-                }
             return jsonify([account_to_dict(account) for account in accounts])
     
     def put(self):
@@ -63,6 +47,8 @@ class ApiAccounts(Resource):
         for account in accounts:
             iter_acc = db.session.query(Account).get(account["id"])
             iter_acc.status = account["status"]
+            iter_acc.id_custom_plan = account["id_custom_plan"]
+            iter_acc.plan_expiration = account["plan_expiration"]
             iter_acc.month_before_banned = account["month_before_banned"]
             iter_acc.max_of_apps = account["max_of_apps"]
             iter_acc.max_vector_space = account["max_vector_space"]

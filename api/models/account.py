@@ -23,7 +23,11 @@ class AccountStatus(enum.StrEnum):
 
 class Account(UserMixin, Base):
     __tablename__ = "accounts"
-    __table_args__ = (db.PrimaryKeyConstraint("id", name="account_pkey"), db.Index("account_email_idx", "email"))
+    __table_args__ = (
+        db.PrimaryKeyConstraint("id", name="account_pkey"),
+        db.Index("account_email_idx", "email"),
+        db.Index("id_custom_plan_idx", "id_custom_plan"),
+    )
 
     id: Mapped[str] = mapped_column(StringUUID, server_default=db.text("uuid_generate_v4()"))
     name = db.Column(db.String(255), nullable=False)
@@ -44,6 +48,8 @@ class Account(UserMixin, Base):
 
     # Custom fields
     month_before_banned = db.Column(db.Integer, nullable=False, server_default=db.text(str(dify_config.user_account_month_before_banned)))
+    id_custom_plan = db.Column(db.String(255), nullable=False, server_default=db.text(""))
+    plan_expiration = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
     max_of_apps = db.Column(db.Integer, nullable=False, server_default=db.text(str(dify_config.user_account_max_of_apps)))
     max_vector_space = db.Column(db.Integer, nullable=False, server_default=db.text(str(dify_config.user_account_max_vector_space)))
     max_annotation_quota_limit = db.Column(db.Integer, nullable=False, server_default=db.text(str(dify_config.user_account_max_annotation_quota_limit)))

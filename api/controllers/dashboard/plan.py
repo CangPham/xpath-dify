@@ -1,3 +1,4 @@
+import uuid
 from flask_restful import Resource
 from flask import jsonify, request
 
@@ -45,30 +46,6 @@ class ApiPlan(Resource):
             object_plans = [PlanModel.model_validate(plan) for plan in system_custom_info.value]
         
         return jsonify([plan.dict() for plan in object_plans])
-    
-    def post(self):
-        # Get the request data
-        data = request.get_json()
-
-        # Validate the data using Pydantic
-        plan = PlanModel.model_validate(data)
-
-        # Create a new system custom info if it doesn't exist
-        system_custom_info = db.session.query(SystemCustomInfo).filter(
-            SystemCustomInfo.name == "plan"
-        ).first()
-
-        if not system_custom_info:
-            system_custom_info = SystemCustomInfo(name="plan", value=[])
-
-        # Append the new plan to the existing plans
-        system_custom_info.value.append(plan.dict())
-
-        # Commit the changes to the database
-        db.session.add(system_custom_info)
-        db.session.commit()
-
-        return jsonify({"status": "success", "message": "Plan added successfully."})
     
     def put(self):
         # Get the request data
