@@ -31,10 +31,34 @@ export type UserProfileResponse = {
   last_active_at?: string
   last_login_ip?: string
   created_at?: string
+  id_custom_plan?: string
+  plan_expiration?: string
 }
 
 export type UserProfileOriginResponse = {
   json: () => Promise<UserProfileResponse>
+  bodyUsed: boolean
+  headers: any
+}
+
+export type CustomPlanResponse = {
+  id: number
+  name: string
+  description: string
+  price: number
+  plan_expiration: number
+  features: {
+    members: number
+    apps: number
+    vector_space: number
+    knowledge_rate_limit: number
+    annotation_quota_limit: number
+    documents_upload_quota: number
+  }
+}
+
+export type CustomPlansOriginResponse = {
+  json: () => Promise<Array<CustomPlanResponse>>
   bodyUsed: boolean
   headers: any
 }

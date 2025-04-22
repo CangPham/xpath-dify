@@ -17,6 +17,8 @@ account_fields = {
     "last_login_at": TimestampField,
     "last_login_ip": fields.String,
     "created_at": TimestampField,
+    "id_custom_plan": fields.String,
+    "plan_expiration": TimestampField,
 }
 
 account_with_role_fields = {

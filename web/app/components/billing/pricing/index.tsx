@@ -25,11 +25,14 @@ const Pricing: FC<Props> = ({
 }) => {
   const { t } = useTranslation()
   const { plan } = useProviderContext()
-  const { isCurrentWorkspaceManager } = useAppContext()
+  const { isCurrentWorkspaceManager, userProfile, customPlans } = useAppContext()
   const canPay = isCurrentWorkspaceManager
   const [planRange, setPlanRange] = React.useState<PlanRange>(PlanRange.monthly)
 
   const [currentPlan, setCurrentPlan] = React.useState<string>('cloud')
+
+  // console.log('userProfile', userProfile)
+  // console.log('customPlans', customPlans)
 
   useKeyPress(['esc'], onCancel)
 
@@ -46,82 +49,24 @@ const Pricing: FC<Props> = ({
           <RiCloseLine className='size-5 text-components-button-tertiary-text' />
         </div>
         <GridMask wrapperClassName='w-full min-h-full' canvasClassName='min-h-full'>
-          {/* <div className='flex flex-col items-center px-8 pb-7 pt-12'>
+          <div className='flex flex-col items-center px-8 pb-7 pt-12'>
             <div className='title-5xl-bold mb-2 text-text-primary'>
               {t('billing.plansCommon.title')}
             </div>
-            <div className='system-sm-regular text-text-secondary'>
+            {/* <div className='system-sm-regular text-text-secondary'>
               <span>{t('billing.plansCommon.freeTrialTipPrefix')}</span>
               <span className='text-gradient font-semibold'>{t('billing.plansCommon.freeTrialTip')}</span>
               <span>{t('billing.plansCommon.freeTrialTipSuffix')}</span>
-            </div>
-          </div> */}
-          <div className='mx-auto w-[1152px]'>
-            {/* <div className='flex h-[64px] items-center justify-between py-2'>
-              <TabSlider
-                value={currentPlan}
-                className='inline-flex'
-                options={[
-                  {
-                    value: 'cloud',
-                    text: <div className={
-                      classNames('inline-flex items-center system-md-semibold-uppercase text-text-secondary',
-                        currentPlan === 'cloud' && 'text-text-accent-light-mode-only')} >
-                      <RiCloudFill className='mr-2 size-4' />{t('billing.plansCommon.cloud')}</div>,
-                  },
-                  {
-                    value: 'self',
-                    text: <div className={
-                      classNames('inline-flex items-center system-md-semibold-uppercase text-text-secondary',
-                        currentPlan === 'self' && 'text-text-accent-light-mode-only')}>
-                      <RiTerminalBoxFill className='mr-2 size-4' />{t('billing.plansCommon.self')}</div>,
-                  }]}
-                onChange={v => setCurrentPlan(v)} />
-
-              {currentPlan === 'cloud' && <SelectPlanRange
-                value={planRange}
-                onChange={setPlanRange}
-              />}
             </div> */}
+          </div>
+          <div className='mx-auto w-[1152px]'>
             <div className='pb-8 pt-3'>
               <div className='flex flex-nowrap justify-center gap-x-4'>
-                {currentPlan === 'cloud' && <>
-                  <PlanItem
-                    currentPlan={plan.type}
-                    plan={Plan.sandbox}
-                    planRange={planRange}
-                    canPay={canPay}
-                  />
-                  <PlanItem
-                    currentPlan={plan.type}
-                    plan={Plan.professional}
-                    planRange={planRange}
-                    canPay={canPay}
-                  />
-                  <PlanItem
-                    currentPlan={plan.type}
-                    plan={Plan.team}
-                    planRange={planRange}
-                    canPay={canPay}
-                  />
-                </>}
-                {currentPlan === 'self' && <>
-                  <SelfHostedPlanItem
-                    plan={SelfHostedPlan.community}
-                    planRange={planRange}
-                    canPay={canPay}
-                  />
-                  <SelfHostedPlanItem
-                    plan={SelfHostedPlan.premium}
-                    planRange={planRange}
-                    canPay={canPay}
-                  />
-                  <SelfHostedPlanItem
-                    plan={SelfHostedPlan.enterprise}
-                    planRange={planRange}
-                    canPay={canPay}
-                  />
-                </>}
+                {
+                  /*
+                  Todo: loop show plan from customPlans
+                  */
+                }
               </div>
             </div>
           </div>

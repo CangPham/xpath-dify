@@ -15,3 +15,4 @@ credentials:
       - admin
 api:
   url: "http://localhost:5001"
+  token: "89fisiqoo009"

@@ -5,6 +5,7 @@ import type {
   ApiBasedExtension,
   CodeBasedExtension,
   CommonResponse,
+  CustomPlansOriginResponse,
   DataSourceNotion,
   FileUploadConfigResponse,
   ICurrentWorkspace,
@@ -75,6 +76,10 @@ export const fetchSetupStatus = () => {
 
 export const fetchUserProfile: Fetcher<UserProfileOriginResponse, { url: string; params: Record<string, any> }> = ({ url, params }) => {
   return get<UserProfileOriginResponse>(url, params, { needAllResponseContent: true })
+}
+
+export const fetchCustomPlans: Fetcher<CustomPlansOriginResponse, { url: string; params: Record<string, any> }> = ({ url, params }) => {
+  return get<CustomPlansOriginResponse>(url, params, { needAllResponseContent: true })
 }
 
 export const updateUserProfile: Fetcher<CommonResponse, { url: string; body: Record<string, any> }> = ({ url, body }) => {
