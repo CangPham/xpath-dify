@@ -4,6 +4,7 @@ import pandas as pd
 import requests
 import streamlit as st
 from modules.request import requestAuth
+from config import config
 
 # function payment settings
 def get_payment_settings():
@@ -142,6 +143,13 @@ def render():
                         st.error(f"Error details: {res.text}")
             except requests.exceptions.RequestException as e:
                 st.error(f"Failed to connect to API: {e}")
+    
+    # Webhook URL
+    st.markdown("#### Webhook URL")
+    webhook_url = config['payment']['webhook_url']
+    st.text_input("Webhook URL", value=webhook_url, disabled=True)
+    st.markdown(
+        "Webhook URL is used to receive payment notifications. Please configure it in your payment gateway settings.")
 
     # === Payment History Section ===
     st.subheader("Payment History")
@@ -149,7 +157,9 @@ def render():
         history = get_payment_history()
     if history is not None:
         if len(history) > 0:
-            df = pd.DataFrame(history)
+            df = pd.DataFrame(history, columns=[
+                'id', 'id_account', 'id_plan', 'type', 'transactionID', 'amount', 'description', 'date', 'bank'
+            ])
             st.dataframe(df)
         else:
             st.info("No payment history records found.")

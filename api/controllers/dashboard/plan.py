@@ -24,7 +24,7 @@ def decode_description_pay(description):
     # Lowercase the description
     description = description.lower()
     # Extract the plan ID from the description using regex
-    match = re.search(r'\b(plan\d{8})\b', description or '')
+    match = re.search(r'\bplan(\d{8})\b', description or '')
     return match.group(1) if match else None
 
 def generate_image_url_pay(bank_id, account_id, amount, description, account_name):
@@ -273,8 +273,20 @@ class ApiPayRequest(Resource):
                 amount=int(plan["price"]),
                 description=f"plan{alies_payment.alies}",
                 account_name=payment_settings.account_name
-            )
+            ),
+            "alies": alies_payment.alies,
         })
+    
+    # Check if alies payment exists for check pay success
+    def get(self, id_account):
+        # Get the alies payment
+        alies_payment = db.session.query(AliesPaymentsCustom).filter_by(id_account=id_account).first()
+        if not alies_payment:
+            # Return dict and status code directly
+            return {"status": "error", "message": "Alies payment not found."}, 404
+
+        # Return dict directly
+        return {"status": "success", "message": "Alies payment found.", "alies": alies_payment.alies}
 
 # API endpoint to handle payment history
 class ApiPaymentHistory(Resource):
@@ -311,7 +323,8 @@ class ApiPlanWebhook(Resource):
         for item in payload['data']:
             try:
                 payment = PaymentHistoryModel.model_validate(item)
-            except Exception:
+            except Exception as e:
+                print(f"Error validating payment data: {e}")
                 continue
             # record history
             hist = PaymentsHistoryCustom(value=payment.model_dump(mode='json'))
@@ -319,20 +332,30 @@ class ApiPlanWebhook(Resource):
             # extract alies ID
             alies_id = decode_description_pay(payment.description)
             if not alies_id:
+                print(f"Invalid alies ID in description: {payment.description}")
                 continue
             alies = db.session.query(AliesPaymentsCustom).filter_by(alies=alies_id).first()
             if not alies:
+                print(f"Alies payment not found for ID: {alies_id}")
                 continue
             info = AliesPaymentsInfo.model_validate(alies.value)
+
+            payment.id_account = info.id_account
+            payment.id_plan = info.id_plan
+            hist = PaymentsHistoryCustom(value=payment.model_dump(mode='json'))
+            db.session.add(hist)
+            
             # get plan definitions
             plan_cfg = db.session.query(SystemCustomInfo).filter_by(name='plan').first()
             plans = plan_cfg.value if plan_cfg else []
             plan = next((p for p in plans if p.get('id') == info.id_plan), None)
             if not plan:
+                print(f"Plan not found for ID: {info.id_plan}")
                 continue
             # find account
             account = db.session.query(Account).filter_by(id=info.id_account).first()
             if not account or payment.amount < plan.get('price', 0):
+                print(f"Account not found or payment amount is less than plan price for account ID: {info.id_account}")
                 continue
             # assign plan and expiration
             account.id_custom_plan = info.id_plan
@@ -349,4 +372,4 @@ api.add_resource(ApiPaymentSettings, "/payment_settings")
 api.add_resource(ApiPaymentHistory, "/payment_history")
 api_console.add_resource(ApiPlanPublic, "/custom/plans")
 api_console.add_resource(ApiPaymentSettingsPublic, "/custom/payment_settings")
-api_console.add_resource(ApiPayRequest, "/custom/pay_request")
+api_console.add_resource(ApiPayRequest, "/custom/pay_request", "/custom/pay_request/<string:id_account>")

@@ -105,7 +105,12 @@ def render():
             hide_index=True,
             num_rows="dynamic",
 
-            key="plan_editor"
+            key="plan_editor",
+            column_order=[
+                "id", "name", "description", "price", "plan_expiration",
+                "members", "apps", "vector_space", "knowledge_rate_limit",
+                "annotation_quota_limit", "documents_upload_quota"
+            ],
         )
 
         # Check if changes were made

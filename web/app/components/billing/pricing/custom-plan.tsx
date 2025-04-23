@@ -1,11 +1,11 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import type { FC, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { RiApps2Line, RiGroupLine, RiHardDrive3Line, RiQuestionLine, RiRssLine, RiSpeedUpLine } from '@remixicon/react'
 import useSWRMutation from 'swr/mutation'
 import Toast from '../../base/toast'
 import type { CustomPlanResponse, PayRequestResponse } from '@/models/common'
-import { post } from '@/service/base'
+import { post, get } from '@/service/base'
 import { useAppContext } from '@/context/app-context'
 import Tooltip from '../../base/tooltip'
 import Divider from '../../base/divider'
@@ -42,22 +42,81 @@ const KeyValue: FC<{ icon: ReactNode; label: string | ReactNode; tooltip?: React
 
 const CustomPlan: FC<Props> = ({ plan }) => {
   const { t } = useTranslation()
-  const { userProfile } = useAppContext()
+  const { userProfile, mutateUserProfile } = useAppContext()
   const currentPlanId = userProfile.id_custom_plan
   const planExpiration = userProfile.plan_expiration
   const isCurrent = String(plan.id) === currentPlanId
   const [qrUrl, setQrUrl] = useState<string>()
   const [isQrModalOpen, setIsQrModalOpen] = useState(false)
+  const [currentAlies, setCurrentAlies] = useState<string | null>(null)
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
   const { trigger, isMutating } = useSWRMutation('/custom/pay_request', payRequestFetcher)
+
+  const stopPolling = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+  }
+
+  useEffect(() => {
+    if (isQrModalOpen && currentAlies && userProfile?.id) {
+      intervalRef.current = setInterval(async () => {
+        try {
+          const url = `/custom/pay_request/${userProfile.id}`
+          const result = await get<{ status: string; message: string; alies?: string }>(url)
+
+          if (result.status === 'success' && result.alies === currentAlies) {
+            console.log('Payment pending, alies matches.')
+            return
+          } else if (result.status === 'success' && result.alies !== currentAlies) {
+            console.error('Alies mismatch. Stopping poll.')
+            Toast.notify({ type: 'error', message: t('billing.errors.aliesMismatch') })
+            stopPolling()
+            setIsQrModalOpen(false)
+          } else if (result.status === 'success') {
+            console.warn('Unexpected success response format:', result)
+          } else {
+            console.error('Unexpected status:', result.status, result.message)
+            Toast.notify({ type: 'error', message: result.message || t('billing.errors.paymentCheckFailed') })
+            stopPolling()
+          }
+        } catch (error: any) {
+          if (error.status === 404) {
+            console.log('Payment likely successful (404). Stopping poll.')
+            Toast.notify({ type: 'success', message: t('billing.paymentSuccessful') })
+            stopPolling()
+            setIsQrModalOpen(false)
+            mutateUserProfile()
+            // Reload the page to reflect the new plan status
+            window.location.reload()
+          } else {
+            console.error('Error checking payment status:', error)
+            Toast.notify({ type: 'error', message: error.message || t('billing.errors.paymentCheckFailed') })
+            stopPolling()
+          }
+        }
+      }, 5000)
+    } else {
+      stopPolling()
+    }
+
+    return () => {
+      stopPolling()
+    }
+  }, [isQrModalOpen, currentAlies, userProfile?.id, t, mutateUserProfile])
 
   const handlePay = async () => {
     if (isMutating || isCurrent) return
     setQrUrl(undefined)
+    setCurrentAlies(null)
+    stopPolling()
     try {
       const result = await trigger({ id_plan: plan.id, id_account: userProfile.id })
-      if (result && result.status === 'success' && typeof result.url === 'string') {
+      if (result && result.status === 'success' && typeof result.url === 'string' && typeof result.alies === 'string') {
         setQrUrl(result.url)
+        setCurrentAlies(result.alies)
         setIsQrModalOpen(true)
       } else {
         Toast.notify({ type: 'error', message: result?.message || t('billing.errors.paymentUrlMissing') })
@@ -74,11 +133,18 @@ const CustomPlan: FC<Props> = ({ plan }) => {
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return 'N/A'
     try {
-      const date = new Date(dateString)
+      // Format string: 1747986975 unix timestamp in seconds
+      // Convert to milliseconds
+      const unixTimestamp = parseInt(dateString, 10) * 1000
+      const date = new Date(unixTimestamp)
       return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
     } catch (e) {
       return 'Invalid Date'
     }
+  }
+
+  const handleCloseModal = () => {
+    setIsQrModalOpen(false)
   }
 
   return (
@@ -87,13 +153,11 @@ const CustomPlan: FC<Props> = ({ plan }) => {
         'flex w-[373px] flex-col rounded-2xl border-[0.5px] border-effects-highlight-lightmode-off bg-background-section-burn p-6 transition-all duration-200 ease-in-out',
         isCurrent ? 'border-blue-600 shadow-lg' : 'hover:border-effects-highlight hover:shadow-lg hover:backdrop-blur-[5px]',
       )}>
-        {/* Plan Header */}
         <div className='flex flex-col gap-y-1'>
           <div className='text-lg font-semibold uppercase leading-[125%] text-text-primary'>{plan.name}</div>
           <div className='system-sm-regular text-text-secondary'>{plan.description}</div>
         </div>
 
-        {/* Price & Expiration */}
         <div className='my-5'>
           <div className='flex items-end'>
             <div className='leading-[125%] text-[28px] font-bold text-text-primary'>{formatPrice(plan.price)} VNĐ</div>
@@ -108,7 +172,6 @@ const CustomPlan: FC<Props> = ({ plan }) => {
           )}
         </div>
 
-        {/* Pay Button */}
         <button
           className={cn(
             'flex h-[42px] items-center justify-center rounded-full px-5 py-3 text-base font-medium transition-colors duration-200 ease-in-out',
@@ -124,7 +187,6 @@ const CustomPlan: FC<Props> = ({ plan }) => {
             ? t('billing.plansCommon.currentPlan') : isMutating ? 'processing...' : 'Buy'}
         </button>
 
-        {/* Features */}
         <div className='mt-6 flex flex-col gap-y-3'>
           <KeyValue
             icon={<RiGroupLine />}
@@ -153,11 +215,10 @@ const CustomPlan: FC<Props> = ({ plan }) => {
         </div>
       </div>
 
-      {/* QR Code Modal using divs */}
       {isQrModalOpen && qrUrl && (
         <div
           className='fixed inset-0 z-[1001] flex items-center justify-center bg-black/50 backdrop-blur-sm'
-          onClick={() => setIsQrModalOpen(false)}
+          onClick={handleCloseModal}
         >
           <div
             className='bg-white rounded-lg shadow-xl p-6 flex flex-col items-center max-w-[600px] w-full'
@@ -170,7 +231,8 @@ const CustomPlan: FC<Props> = ({ plan }) => {
               alt='Payment QR code'
             />
             <p className='text-sm text-gray-600 mb-4'>{t('billing.scanToPay')}</p>
-            <Button onClick={() => setIsQrModalOpen(false)} className='w-full'>
+            <p className='text-xs text-gray-500 mb-4'>{t('billing.checkingPaymentStatus')}</p>
+            <Button onClick={handleCloseModal} className='w-full'>
               {t('common.operation.close')}
             </Button>
           </div>

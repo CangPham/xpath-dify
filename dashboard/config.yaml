@@ -16,3 +16,5 @@ credentials:
 api:
   url: "http://localhost:5001"
   token: "89fisiqoo009"
+payment:
+  webhook_url: "https://....../dashboard/webhook/plan"

@@ -30,6 +30,8 @@ class PaymentSettingsModelPublic(BaseModel):
     bank_id: str = ""
 
 class PaymentHistoryModel(BaseModel):
+    id_account: str = ""
+    id_plan: str = ""
     id: str
     type: str
     transactionID: str

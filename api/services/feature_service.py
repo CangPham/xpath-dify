@@ -144,8 +144,10 @@ class FeatureService:
         plan_expiration = account_owner.plan_expiration
         # Check if id_current_plan and plan_expiration greater than current date
         if id_current_plan and plan_expiration:
+            # Make plan_expiration timezone-aware (assuming UTC)
+            plan_expiration_aware = plan_expiration.replace(tzinfo=timezone.utc)
             # Check if plan_expiration is greater than current date
-            if plan_expiration > datetime.now(timezone.utc):
+            if plan_expiration_aware > datetime.now(timezone.utc):
                 # Get list of plans
                 system_custom_info = db.session.query(SystemCustomInfo).filter(
                     SystemCustomInfo.name.in_(["plan"])
@@ -159,7 +161,7 @@ class FeatureService:
                         features.members.limit = plan.features.members
                         features.apps.limit = plan.features.apps
                         features.vector_space.limit = plan.features.vector_space
-                        features.knowledge_rate_limit.limit = plan.features.knowledge_rate_limit
+                        features.knowledge_rate_limit = plan.features.knowledge_rate_limit
                         features.annotation_quota_limit.limit = plan.features.annotation_quota_limit
                         features.documents_upload_quota.limit = plan.features.documents_upload_quota
 
