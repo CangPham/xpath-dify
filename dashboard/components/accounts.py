@@ -1,9 +1,7 @@
-import os
 import time
 import pandas as pd
-import requests
 import streamlit as st
-from config import config, api_url
+from config import api_url
 from modules.request import requestAuth
 
 # Cache data

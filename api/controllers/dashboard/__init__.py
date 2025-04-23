@@ -1,5 +1,7 @@
-from flask import Blueprint, request
 from functools import wraps
+
+from flask import Blueprint, request
+
 from libs.external_api import ExternalApi
 
 bp = Blueprint("dashboard", __name__, url_prefix="/dashboard")
@@ -16,5 +18,5 @@ def api_key_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-from . import accounts, index, plan
+from . import accounts, explore, index, plan
 # from . import reset

@@ -52,10 +52,10 @@ const SwrInitor = ({
 
       try {
         const isFinished = await isSetupFinished()
-        if (!isFinished) {
-          router.replace('/install')
-          return
-        }
+        // if (!isFinished) {
+        //   router.replace('/install')
+        //   return
+        // }
         if (!((consoleToken && refreshToken) || (consoleTokenFromLocalStorage && refreshTokenFromLocalStorage))) {
           router.replace('/signin')
           return

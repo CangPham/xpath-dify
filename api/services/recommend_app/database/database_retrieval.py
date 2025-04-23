@@ -1,6 +1,5 @@
 from typing import Optional
 
-from constants.languages import languages
 from extensions.ext_database import db
 from models.model import App, RecommendedApp
 from services.app_dsl_service import AppDslService
@@ -33,14 +32,14 @@ class DatabaseRecommendAppRetrieval(RecommendAppRetrievalBase):
         """
         recommended_apps = (
             db.session.query(RecommendedApp)
-            .filter(RecommendedApp.is_listed == True, RecommendedApp.language == language)
+            .filter(RecommendedApp.is_listed == True) # , RecommendedApp.language == language
             .all()
         )
 
         if len(recommended_apps) == 0:
             recommended_apps = (
                 db.session.query(RecommendedApp)
-                .filter(RecommendedApp.is_listed == True, RecommendedApp.language == languages[0])
+                .filter(RecommendedApp.is_listed == True) # , RecommendedApp.language == languages[0]
                 .all()
             )
 
@@ -48,21 +47,21 @@ class DatabaseRecommendAppRetrieval(RecommendAppRetrievalBase):
         recommended_apps_result = []
         for recommended_app in recommended_apps:
             app = recommended_app.app
-            if not app or not app.is_public:
+            if not app: #  or not app.is_public
                 continue
 
-            site = app.site
-            if not site:
-                continue
+            # site = app.site
+            # if not site:
+            #     continue
 
             recommended_app_result = {
                 "id": recommended_app.id,
                 "app": recommended_app.app,
                 "app_id": recommended_app.app_id,
-                "description": site.description,
-                "copyright": site.copyright,
-                "privacy_policy": site.privacy_policy,
-                "custom_disclaimer": site.custom_disclaimer,
+                "description": recommended_app.description,
+                "copyright": recommended_app.copyright,
+                "privacy_policy": recommended_app.privacy_policy,
+                "custom_disclaimer": recommended_app.custom_disclaimer,
                 "category": recommended_app.category,
                 "position": recommended_app.position,
                 "is_listed": recommended_app.is_listed,
@@ -92,7 +91,7 @@ class DatabaseRecommendAppRetrieval(RecommendAppRetrievalBase):
 
         # get app detail
         app_model = db.session.query(App).filter(App.id == app_id).first()
-        if not app_model or not app_model.is_public:
+        if not app_model: # or not app_model.is_public
             return None
 
         return {

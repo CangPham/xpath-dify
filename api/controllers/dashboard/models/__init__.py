@@ -1,5 +1,7 @@
-from configs import dify_config
 from pydantic import BaseModel
+
+from configs import dify_config
+
 
 # Models for Pydantic validation
 class FeatureCustomModel(BaseModel):

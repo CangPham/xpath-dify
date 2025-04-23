@@ -1,3 +1,5 @@
+# Custom imports
+from datetime import UTC, datetime
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
@@ -12,12 +14,10 @@ from models.account import (
 )
 from models.dataset import Dataset, Document
 from models.model import App, MessageAnnotation
+from models.system_custom_info import SystemCustomInfo
 from services.billing_service import BillingService
 from services.enterprise.enterprise_service import EnterpriseService
 
-# Custom imports
-from datetime import datetime, timedelta, timezone
-from models.system_custom_info import SystemCustomInfo
 
 # Custom models for Pydantic validation
 class FeatureCustomModel(BaseModel):
@@ -145,9 +145,9 @@ class FeatureService:
         # Check if id_current_plan and plan_expiration greater than current date
         if id_current_plan and plan_expiration:
             # Make plan_expiration timezone-aware (assuming UTC)
-            plan_expiration_aware = plan_expiration.replace(tzinfo=timezone.utc)
+            plan_expiration_aware = plan_expiration.replace(tzinfo=UTC)
             # Check if plan_expiration is greater than current date
-            if plan_expiration_aware > datetime.now(timezone.utc):
+            if plan_expiration_aware > datetime.now(UTC):
                 # Get list of plans
                 system_custom_info = db.session.query(SystemCustomInfo).filter(
                     SystemCustomInfo.name.in_(["plan"])

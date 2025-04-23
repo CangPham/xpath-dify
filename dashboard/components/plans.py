@@ -1,7 +1,5 @@
-import os
 import time
 import pandas as pd
-import requests
 import streamlit as st
 from uuid import uuid4
 from modules.request import requestAuth

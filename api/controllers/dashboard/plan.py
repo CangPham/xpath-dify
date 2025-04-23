@@ -1,17 +1,19 @@
 import random
 import re
-from datetime import datetime, timedelta, date, timezone
+import urllib.parse
+from datetime import UTC, datetime, timedelta
+
 from flask import jsonify, request
 from flask_restful import Resource
-import urllib.parse
 
-from controllers.dashboard import api, api_key_required
 from controllers.console import api as api_console
+from controllers.dashboard import api, api_key_required
 from extensions.ext_database import db
-from models.system_custom_info import SystemCustomInfo
-from models.payments_history_custom import PaymentsHistoryCustom
-from models.alies_payments_custom import AliesPaymentsCustom
 from models.account import Account
+from models.alies_payments_custom import AliesPaymentsCustom
+from models.payments_history_custom import PaymentsHistoryCustom
+from models.system_custom_info import SystemCustomInfo
+
 from .models import *
 
 # Helper function
@@ -359,7 +361,7 @@ class ApiPlanWebhook(Resource):
                 continue
             # assign plan and expiration
             account.id_custom_plan = info.id_plan
-            account.plan_expiration = datetime.now(timezone.utc) + timedelta(days=plan.get('plan_expiration', 0))
+            account.plan_expiration = datetime.now(UTC) + timedelta(days=plan.get('plan_expiration', 0))
             db.session.add(account)
             db.session.delete(alies)
 

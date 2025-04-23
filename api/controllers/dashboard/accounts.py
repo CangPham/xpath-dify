@@ -1,10 +1,11 @@
+
 from flask import jsonify, request
 from flask_restful import Resource
-from functools import wraps
 
 from controllers.dashboard import api, api_key_required
 from models import db
 from models.account import Account
+
 
 def account_to_dict(account):
     return {
