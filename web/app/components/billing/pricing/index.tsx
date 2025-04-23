@@ -60,7 +60,7 @@ const Pricing: FC<Props> = ({
           </div>
           <div className='mx-auto w-[1152px]'>
             <div className='pb-8 pt-3'>
-              <div className='flex flex-nowrap justify-center gap-x-4'>
+              <div className='flex flex-wrap justify-center gap-4'>
                 {customPlans.map(plan => (
                   <CustomPlan key={plan.id} plan={plan} />
                 ))}

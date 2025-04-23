@@ -9,6 +9,7 @@ import { post } from '@/service/base'
 import { useAppContext } from '@/context/app-context'
 import Tooltip from '../../base/tooltip'
 import Divider from '../../base/divider'
+import Button from '../../base/button'
 import cn from '@/utils/classnames'
 
 type Props = { plan: CustomPlanResponse }
@@ -46,6 +47,7 @@ const CustomPlan: FC<Props> = ({ plan }) => {
   const planExpiration = userProfile.plan_expiration
   const isCurrent = String(plan.id) === currentPlanId
   const [qrUrl, setQrUrl] = useState<string>()
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false)
 
   const { trigger, isMutating } = useSWRMutation('/custom/pay_request', payRequestFetcher)
 
@@ -56,6 +58,7 @@ const CustomPlan: FC<Props> = ({ plan }) => {
       const result = await trigger({ id_plan: plan.id, id_account: userProfile.id })
       if (result && result.status === 'success' && typeof result.url === 'string') {
         setQrUrl(result.url)
+        setIsQrModalOpen(true)
       } else {
         Toast.notify({ type: 'error', message: result?.message || t('billing.errors.paymentUrlMissing') })
       }
@@ -79,87 +82,101 @@ const CustomPlan: FC<Props> = ({ plan }) => {
   }
 
   return (
-    <div className={cn(
-      'flex w-[373px] flex-col rounded-2xl border-[0.5px] border-effects-highlight-lightmode-off bg-background-section-burn p-6 transition-all duration-200 ease-in-out',
-      isCurrent ? 'border-blue-600 shadow-lg' : 'hover:border-effects-highlight hover:shadow-lg hover:backdrop-blur-[5px]',
-    )}>
-      {/* Plan Header */}
-      <div className='flex flex-col gap-y-1'>
-        <div className='text-lg font-semibold uppercase leading-[125%] text-text-primary'>{plan.name}</div>
-        <div className='system-sm-regular text-text-secondary'>{plan.description}</div>
-      </div>
-
-      {/* Price & Expiration */}
-      <div className='my-5'>
-        <div className='flex items-end'>
-          <div className='leading-[125%] text-[28px] font-bold text-text-primary'>{formatPrice(plan.price)} VNĐ</div>
-          <div className='ml-1 text-[14px] font-normal leading-normal text-text-tertiary'>
-            / {plan.plan_expiration} {t('billing.plansCommon.days')}
-          </div>
+    <>
+      <div className={cn(
+        'flex w-[373px] flex-col rounded-2xl border-[0.5px] border-effects-highlight-lightmode-off bg-background-section-burn p-6 transition-all duration-200 ease-in-out',
+        isCurrent ? 'border-blue-600 shadow-lg' : 'hover:border-effects-highlight hover:shadow-lg hover:backdrop-blur-[5px]',
+      )}>
+        {/* Plan Header */}
+        <div className='flex flex-col gap-y-1'>
+          <div className='text-lg font-semibold uppercase leading-[125%] text-text-primary'>{plan.name}</div>
+          <div className='system-sm-regular text-text-secondary'>{plan.description}</div>
         </div>
-        {isCurrent && planExpiration && (
-          <div className='mt-1 text-xs text-text-secondary'>
-            {t('billing.currentPlanExpireAt')} {formatDate(planExpiration)}
+
+        {/* Price & Expiration */}
+        <div className='my-5'>
+          <div className='flex items-end'>
+            <div className='leading-[125%] text-[28px] font-bold text-text-primary'>{formatPrice(plan.price)} VNĐ</div>
+            <div className='ml-1 text-[14px] font-normal leading-normal text-text-tertiary'>
+              / {plan.plan_expiration} {t('billing.plansCommon.days')}
+            </div>
           </div>
-        )}
+          {isCurrent && planExpiration && (
+            <div className='mt-1 text-xs text-text-secondary'>
+              {t('billing.currentPlanExpireAt')} {formatDate(planExpiration)}
+            </div>
+          )}
+        </div>
+
+        {/* Pay Button */}
+        <button
+          className={cn(
+            'flex h-[42px] items-center justify-center rounded-full px-5 py-3 text-base font-medium transition-colors duration-200 ease-in-out',
+            isCurrent
+              ? 'cursor-default bg-components-button-secondary-bg-disabled border border-components-button-secondary-border-disabled text-components-button-secondary-text-disabled'
+              : 'cursor-pointer bg-components-button-primary-bg hover:bg-components-button-primary-bg-hover border border-components-button-primary-border text-components-button-primary-text',
+            isMutating && 'opacity-70 cursor-wait',
+          )}
+          disabled={isCurrent || isMutating}
+          onClick={handlePay}
+        >
+          {isCurrent
+            ? t('billing.plansCommon.currentPlan') : isMutating ? 'processing...' : 'Buy'}
+        </button>
+
+        {/* Features */}
+        <div className='mt-6 flex flex-col gap-y-3'>
+          <KeyValue
+            icon={<RiGroupLine />}
+            label={`${plan.features.members} ${t('billing.plansCommon.teamMember')}`}
+          />
+          <KeyValue
+            icon={<RiApps2Line />}
+            label={`${plan.features.apps} ${t('billing.plansCommon.buildApps')}`}
+          />
+          <Divider bgStyle='gradient' />
+          <KeyValue
+            icon={<RiHardDrive3Line />}
+            label={`${plan.features.vector_space}MB ${t('billing.plansCommon.vectorSpace')}`}
+            tooltip={t('billing.plansCommon.vectorSpaceTooltip') as string}
+          />
+          <KeyValue
+            icon={<RiSpeedUpLine />}
+            label={`${plan.features.documents_upload_quota} ${t('billing.plansCommon.knowledgeUploadLimit')}`}
+            tooltip={t('billing.plansCommon.knowledgeUploadLimitTooltip') as string}
+          />
+          <KeyValue
+            icon={<RiRssLine />}
+            label={`${plan.features.annotation_quota_limit} ${t('billing.plansCommon.annotationQuota')}`}
+            tooltip={t('billing.plansCommon.annotationQuotaTooltip') as string}
+          />
+        </div>
       </div>
 
-      {/* Pay Button */}
-      <button
-        className={cn(
-          'flex h-[42px] items-center justify-center rounded-full px-5 py-3 text-base font-medium transition-colors duration-200 ease-in-out',
-          isCurrent
-            ? 'cursor-default bg-components-button-secondary-bg-disabled border border-components-button-secondary-border-disabled text-components-button-secondary-text-disabled'
-            : 'cursor-pointer bg-components-button-primary-bg hover:bg-components-button-primary-bg-hover border border-components-button-primary-border text-components-button-primary-text',
-          isMutating && 'opacity-70 cursor-wait',
-        )}
-        disabled={isCurrent || isMutating}
-        onClick={handlePay}
-      >
-        {isCurrent
-          ? t('billing.plansCommon.currentPlan') : isMutating ? 'processing...' : 'Buy'}
-      </button>
-
-      {/* QR Code Display */}
-      {qrUrl && (
-        <div className='mt-6 flex flex-col items-center'>
-          <img
-            className='w-40 h-40 border rounded-md'
-            src={qrUrl}
-            alt='Payment QR code'
-          />
-          <p className='mt-2 text-sm text-text-secondary'>{t('billing.scanToPay')}</p>
+      {/* QR Code Modal using divs */}
+      {isQrModalOpen && qrUrl && (
+        <div
+          className='fixed inset-0 z-[1001] flex items-center justify-center bg-black/50 backdrop-blur-sm'
+          onClick={() => setIsQrModalOpen(false)}
+        >
+          <div
+            className='bg-white rounded-lg shadow-xl p-6 flex flex-col items-center max-w-[600px] w-full'
+            onClick={e => e.stopPropagation()}
+          >
+            <h2 className='text-lg font-semibold mb-4 text-gray-900'>{t('billing.scanToPayTitle')}</h2>
+            <img
+              className='mb-4'
+              src={qrUrl}
+              alt='Payment QR code'
+            />
+            <p className='text-sm text-gray-600 mb-4'>{t('billing.scanToPay')}</p>
+            <Button onClick={() => setIsQrModalOpen(false)} className='w-full'>
+              {t('common.operation.close')}
+            </Button>
+          </div>
         </div>
       )}
-
-      {/* Features */}
-      <div className='mt-6 flex flex-col gap-y-3'>
-        <KeyValue
-          icon={<RiGroupLine />}
-          label={`${plan.features.members} ${t('billing.plansCommon.teamMember')}`}
-        />
-        <KeyValue
-          icon={<RiApps2Line />}
-          label={`${plan.features.apps} ${t('billing.plansCommon.buildApps')}`}
-        />
-        <Divider bgStyle='gradient' />
-        <KeyValue
-          icon={<RiHardDrive3Line />}
-          label={`${plan.features.vector_space}MB ${t('billing.plansCommon.vectorSpace')}`}
-          tooltip={t('billing.plansCommon.vectorSpaceTooltip') as string}
-        />
-        <KeyValue
-          icon={<RiSpeedUpLine />}
-          label={`${plan.features.documents_upload_quota} ${t('billing.plansCommon.knowledgeUploadLimit')}`}
-          tooltip={t('billing.plansCommon.knowledgeUploadLimitTooltip') as string}
-        />
-        <KeyValue
-          icon={<RiRssLine />}
-          label={`${plan.features.annotation_quota_limit} ${t('billing.plansCommon.annotationQuota')}`}
-          tooltip={t('billing.plansCommon.annotationQuotaTooltip') as string}
-        />
-      </div>
-    </div>
+    </>
   )
 }
 
