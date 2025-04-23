@@ -5,6 +5,7 @@ import type {
   ApiBasedExtension,
   CodeBasedExtension,
   CommonResponse,
+  CustomPaymentSettingOriginResponse,
   CustomPlansOriginResponse,
   DataSourceNotion,
   FileUploadConfigResponse,
@@ -16,6 +17,7 @@ import type {
   Member,
   ModerateResponse,
   OauthResponse,
+  PayRequestResponse,
   PluginProvider,
   Provider,
   ProviderAnthropicToken,
@@ -78,9 +80,17 @@ export const fetchUserProfile: Fetcher<UserProfileOriginResponse, { url: string;
   return get<UserProfileOriginResponse>(url, params, { needAllResponseContent: true })
 }
 
+// Custom
 export const fetchCustomPlans: Fetcher<CustomPlansOriginResponse, { url: string; params: Record<string, any> }> = ({ url, params }) => {
   return get<CustomPlansOriginResponse>(url, params, { needAllResponseContent: true })
 }
+export const fetchCustomPaymentSetting: Fetcher<CustomPaymentSettingOriginResponse, { url: string; params: Record<string, any> }> = ({ url, params }) => {
+  return get<CustomPaymentSettingOriginResponse>(url, params, { needAllResponseContent: true })
+}
+export const sendPayRequest: Fetcher<PayRequestResponse, { url: string; body: Record<string, any> }> = ({ url, body }) => {
+  return post<PayRequestResponse>(url, { body })
+}
+// End Custom
 
 export const updateUserProfile: Fetcher<CommonResponse, { url: string; body: Record<string, any> }> = ({ url, body }) => {
   return post<CommonResponse>(url, { body })

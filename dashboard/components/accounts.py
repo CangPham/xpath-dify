@@ -3,20 +3,22 @@ import time
 import pandas as pd
 import requests
 import streamlit as st
+from config import config, api_url
+from modules.request import requestAuth
 
 # Cache data
 
 
-def get_accounts(api_url):
-    res = requests.get(f"{api_url}/accounts")
+def get_accounts():
+    res = requestAuth.get("accounts")
     if res.status_code == 200:
         return res.json()
     else:
         raise Exception("Failed to load accounts.")
 
 
-def render(config, api_url):
-    api_token = config['api']['token']
+def render():
+
     st.subheader("Accounts")
 
     # Button to refresh
@@ -25,7 +27,7 @@ def render(config, api_url):
 
     # Get accounts from API flask
     with st.spinner("Loading accounts..."):
-        accounts = get_accounts(api_url)
+        accounts = get_accounts()
 
     if len(accounts) == 0:
         st.warning("No accounts found.")
@@ -123,13 +125,15 @@ def render(config, api_url):
     if df.to_dict(orient="records") == edited_df:
         pass
     else:
-        res = requests.put(
-            f"{api_url}/accounts",
+        # Convert any pandas Timestamps to JSON-serializable strings
+        for rec in edited_df:
+            ts = rec.get("plan_expiration")
+            if isinstance(ts, pd.Timestamp):
+                rec["plan_expiration"] = ts.isoformat()
+
+        res = requestAuth.put(
+            "accounts",
             json=edited_df,
-            headers={
-                "api-token": str(api_token),
-                "Content-Type": "application/json"
-            }
         )
 
         if res.status_code == 200:
@@ -150,11 +154,8 @@ def render(config, api_url):
         if delete_id:
             try:
                 st.write(f"{api_url}/accounts/{delete_id}")
-                res = requests.delete(
-                    f"{api_url}/accounts/{delete_id}",
-                    headers={
-                        "api-token": str(api_token),
-                    }
+                res = requestAuth.delete(
+                    f"accounts/{delete_id}",
                 )
 
                 try:

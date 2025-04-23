@@ -15,7 +15,28 @@ from models.model import App, MessageAnnotation
 from services.billing_service import BillingService
 from services.enterprise.enterprise_service import EnterpriseService
 
+# Custom imports
+from datetime import datetime, timedelta, timezone
+from models.system_custom_info import SystemCustomInfo
 
+# Custom models for Pydantic validation
+class FeatureCustomModel(BaseModel):
+    members: int = 1
+    apps: int = dify_config.user_account_max_of_apps
+    vector_space: int = dify_config.user_account_max_vector_space
+    knowledge_rate_limit: int = dify_config.user_account_knowledge_rate_limit
+    annotation_quota_limit: int = dify_config.user_account_max_annotation_quota_limit
+    documents_upload_quota: int = dify_config.user_account_max_documents_upload_quota
+
+class PlanModel(BaseModel):
+    id: str
+    name: str
+    description: str
+    price: float
+    plan_expiration: int   # number of days until expiration
+    features: FeatureCustomModel
+
+# -----
 class SubscriptionModel(BaseModel):
     plan: str = "sandbox"
     interval: str = ""
@@ -118,11 +139,35 @@ class FeatureService:
             .filter(Account.id == join.account_id)
             .first()
         )
+        # Get id plan and plan expiration date
+        id_current_plan = account_owner.id_custom_plan
+        plan_expiration = account_owner.plan_expiration
+        # Check if id_current_plan and plan_expiration greater than current date
+        if id_current_plan and plan_expiration:
+            # Check if plan_expiration is greater than current date
+            if plan_expiration > datetime.now(timezone.utc):
+                # Get list of plans
+                system_custom_info = db.session.query(SystemCustomInfo).filter(
+                    SystemCustomInfo.name.in_(["plan"])
+                ).first()
+                if system_custom_info:
+                    object_plans = [PlanModel.model_validate(plan) for plan in system_custom_info.value]
+                    # Get plan by id_current_plan
+                    plan = next((plan for plan in object_plans if plan.id == id_current_plan), None)
+                    if plan:
+                        # Get plan features
+                        features.members.limit = plan.features.members
+                        features.apps.limit = plan.features.apps
+                        features.vector_space.limit = plan.features.vector_space
+                        features.knowledge_rate_limit.limit = plan.features.knowledge_rate_limit
+                        features.annotation_quota_limit.limit = plan.features.annotation_quota_limit
+                        features.documents_upload_quota.limit = plan.features.documents_upload_quota
+
         # Edit the features here
-        features.apps.limit = account_owner.max_of_apps
-        features.vector_space.limit = account_owner.max_vector_space
-        features.annotation_quota_limit.limit = account_owner.max_annotation_quota_limit
-        features.documents_upload_quota.limit = account_owner.max_documents_upload_quota
+        features.apps.limit = max(features.apps.limit, account_owner.max_of_apps)
+        features.vector_space.limit = max(features.vector_space.limit, account_owner.max_vector_space)
+        features.annotation_quota_limit.limit = max(features.annotation_quota_limit.limit, account_owner.max_annotation_quota_limit)
+        features.documents_upload_quota.limit = max(features.documents_upload_quota.limit, account_owner.max_documents_upload_quota)
 
     @classmethod
     def get_knowledge_rate_limit(cls, tenant_id: str):

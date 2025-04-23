@@ -4,14 +4,15 @@ import pandas as pd
 import requests
 import streamlit as st
 from uuid import uuid4
+from modules.request import requestAuth
 
 # Function generates a random UUID
 def generate_random_id():
     return str(uuid4())
 
 # Add functions for Plans API
-def get_plans(api_url):
-    res = requests.get(f"{api_url}/plans")
+def get_plans():
+    res = requestAuth.get("plans")
     if res.status_code == 200:
         return res.json()
     else:
@@ -19,20 +20,15 @@ def get_plans(api_url):
         return []
 
 
-def update_plans(api_url, plans_data, api_token):
-    res = requests.put(
-        f"{api_url}/plans",
+def update_plans(plans_data):
+    res = requestAuth.put(
+        "plans",
         json=plans_data,
-        headers={
-            "api-token": str(api_token),
-            "Content-Type": "application/json"
-        }
     )
     return res
 
 
-def render(config, api_url):
-    api_token = config['api']['token']
+def render():
     st.subheader("Manage Plans")
 
     # Button to refresh
@@ -41,7 +37,7 @@ def render(config, api_url):
 
     # Get plans from API
     with st.spinner("Loading plans..."):
-        plans_data = get_plans(api_url)
+        plans_data = get_plans()
 
     if 'plans_df' not in st.session_state or st.session_state.plans_data != plans_data:
         st.session_state.plans_data = plans_data
@@ -167,7 +163,7 @@ def render(config, api_url):
                     plan_dict['price'] = float(plan_dict['price'])
                     plans_to_save.append(plan_dict)
 
-                res = update_plans(api_url, plans_to_save, api_token)
+                res = update_plans(plans_to_save)
 
                 if res.status_code == 200:
                     st.success("Plans updated successfully.")

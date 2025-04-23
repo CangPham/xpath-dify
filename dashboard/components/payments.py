@@ -3,17 +3,11 @@ import time
 import pandas as pd
 import requests
 import streamlit as st
+from modules.request import requestAuth
 
 # function payment settings
-
-
-def get_payment_settings(api_url, api_token):
-    res = requests.get(
-        f"{api_url}/payment_settings",
-        headers={
-            "api-token": str(api_token),
-        }
-    )
+def get_payment_settings():
+    res = requestAuth.get("payment_settings")
     if res.status_code == 200:
         return res.json()
     else:
@@ -26,8 +20,21 @@ def get_payment_settings(api_url, api_token):
         return None  # Return None or a default dict if loading fails
 
 
-def render(config, api_url):
-    api_token = config['api']['token']
+# helper to fetch payment history
+def get_payment_history():
+    res = requestAuth.get("payment_history")
+    if res.status_code == 200:
+        return res.json()
+    else:
+        st.error(f"Failed to load payment history. Status code: {res.status_code}")
+        try:
+            st.error(f"Error details: {res.json()}")
+        except:
+            st.error(f"Error details: {res.text}")
+        return None
+
+
+def render():
     st.subheader("Payment Settings")
 
     # Button to refresh
@@ -38,7 +45,7 @@ def render(config, api_url):
 
     # Get payment settings from API
     with st.spinner("Loading payment settings..."):
-        settings = get_payment_settings(api_url, api_token)
+        settings = get_payment_settings()
 
     if settings is None:
         st.error(
@@ -116,13 +123,9 @@ def render(config, api_url):
 
             # Send updated settings to API
             try:
-                res = requests.put(
-                    f"{api_url}/payment_settings",
+                res = requestAuth.put(
+                    "payment_settings",
                     json=updated_settings,
-                    headers={
-                        "api-token": str(api_token),
-                        "Content-Type": "application/json"
-                    }
                 )
                 if res.status_code == 200:
                     st.success("Payment settings saved successfully.")
@@ -139,3 +142,16 @@ def render(config, api_url):
                         st.error(f"Error details: {res.text}")
             except requests.exceptions.RequestException as e:
                 st.error(f"Failed to connect to API: {e}")
+
+    # === Payment History Section ===
+    st.subheader("Payment History")
+    with st.spinner("Loading payment history..."):
+        history = get_payment_history()
+    if history is not None:
+        if len(history) > 0:
+            df = pd.DataFrame(history)
+            st.dataframe(df)
+        else:
+            st.info("No payment history records found.")
+    else:
+        st.error("Could not load payment history.")

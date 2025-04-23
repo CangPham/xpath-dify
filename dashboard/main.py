@@ -5,15 +5,8 @@ import requests
 import streamlit as st
 import streamlit_authenticator as stauth
 import uuid
-from yaml.loader import SafeLoader
 
-import yaml
-
-with open("./config.yaml") as file:
-    config = yaml.load(file, Loader=SafeLoader)
-
-# Using environment variables or config file
-api_url = (os.getenv("API_URL") if os.getenv("API_URL") else config['api']['url']) + "/dashboard"
+from config import config, api_url
 # print(f"API URL: {api_url}")
 
 st.set_page_config(page_title="Dashboard", page_icon=":bar_chart:", layout="wide")
@@ -41,13 +34,13 @@ if st.session_state['authentication_status']:
     menu = st.sidebar.radio("Go to", ["Accounts", "Plans", "Payments"])
 
     if menu == "Accounts":
-        render_accounts(config, api_url)
+        render_accounts()
 
     elif menu == "Plans":
-        render_plans(config, api_url)
+        render_plans()
 
     elif menu == "Payments":
-        render_payments(config, api_url)
+        render_payments()
 
 else:
     st.warning("Please log in to access the dashboard.")

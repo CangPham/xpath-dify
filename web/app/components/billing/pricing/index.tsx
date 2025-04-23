@@ -11,6 +11,7 @@ import TabSlider from '../../base/tab-slider'
 import SelectPlanRange, { PlanRange } from './select-plan-range'
 import PlanItem from './plan-item'
 import SelfHostedPlanItem from './self-hosted-plan-item'
+import CustomPlan from './custom-plan'
 import { useProviderContext } from '@/context/provider-context'
 import GridMask from '@/app/components/base/grid-mask'
 import { useAppContext } from '@/context/app-context'
@@ -53,29 +54,19 @@ const Pricing: FC<Props> = ({
             <div className='title-5xl-bold mb-2 text-text-primary'>
               {t('billing.plansCommon.title')}
             </div>
-            {/* <div className='system-sm-regular text-text-secondary'>
-              <span>{t('billing.plansCommon.freeTrialTipPrefix')}</span>
-              <span className='text-gradient font-semibold'>{t('billing.plansCommon.freeTrialTip')}</span>
-              <span>{t('billing.plansCommon.freeTrialTipSuffix')}</span>
-            </div> */}
+            <div className='system-sm-regular text-text-secondary'>
+              <span>Import note: Hãy đảm chuyển khoản đúng nội dung và đúng số tiền để tránh kích hoạt gói không thành công.</span>
+            </div>
           </div>
           <div className='mx-auto w-[1152px]'>
             <div className='pb-8 pt-3'>
               <div className='flex flex-nowrap justify-center gap-x-4'>
-                {
-                  /*
-                  Todo: loop show plan from customPlans
-                  */
-                }
+                {customPlans.map(plan => (
+                  <CustomPlan key={plan.id} plan={plan} />
+                ))}
               </div>
             </div>
           </div>
-          {/* <div className='flex items-center justify-center py-4'>
-            <div className='flex items-center justify-center gap-x-0.5 rounded-lg px-3 py-2 text-components-button-secondary-accent-text hover:cursor-pointer hover:bg-state-accent-hover'>
-              <Link href='https://dify.ai/pricing#plans-and-features' className='system-sm-medium'>{t('billing.plansCommon.comparePlanAndFeatures')}</Link>
-              <RiArrowRightUpLine className='size-4' />
-            </div>
-          </div> */}
         </GridMask>
       </div >
     </div >,

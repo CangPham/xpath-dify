@@ -1,10 +1,10 @@
 from flask import jsonify, request
 from flask_restful import Resource
+from functools import wraps
 
-from controllers.dashboard import api
+from controllers.dashboard import api, api_key_required
 from models import db
 from models.account import Account
-
 
 def account_to_dict(account):
     return {
@@ -29,6 +29,8 @@ def account_to_dict(account):
     }
 
 class ApiAccounts(Resource):
+    method_decorators = [api_key_required]
+
     def get(self, account_id=None):
         if account_id:
             account = db.session.query(Account).filter_by(id=account_id).first()
