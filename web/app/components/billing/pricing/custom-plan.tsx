@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
 import type { FC, ReactNode } from 'react'
-import { useTranslation } from 'react-i18next'
 import { RiApps2Line, RiGroupLine, RiHardDrive3Line, RiQuestionLine, RiRssLine, RiSpeedUpLine } from '@remixicon/react'
 import useSWRMutation from 'swr/mutation'
 import Toast from '../../base/toast'
@@ -41,7 +40,6 @@ const KeyValue: FC<{ icon: ReactNode; label: string | ReactNode; tooltip?: React
 }
 
 const CustomPlan: FC<Props> = ({ plan }) => {
-  const { t } = useTranslation()
   const { userProfile, mutateUserProfile } = useAppContext()
   const currentPlanId = userProfile.id_custom_plan
   const planExpiration = userProfile.plan_expiration
@@ -72,20 +70,20 @@ const CustomPlan: FC<Props> = ({ plan }) => {
             return
           } else if (result.status === 'success' && result.alies !== currentAlies) {
             console.error('Alies mismatch. Stopping poll.')
-            Toast.notify({ type: 'error', message: t('billing.errors.aliesMismatch') })
+            Toast.notify({ type: 'error', message: 'Alies không khớp.' })
             stopPolling()
             setIsQrModalOpen(false)
           } else if (result.status === 'success') {
             console.warn('Unexpected success response format:', result)
           } else {
             console.error('Unexpected status:', result.status, result.message)
-            Toast.notify({ type: 'error', message: result.message || t('billing.errors.paymentCheckFailed') })
+            Toast.notify({ type: 'error', message: result.message || 'Kiểm tra thanh toán thất bại.' })
             stopPolling()
           }
         } catch (error: any) {
           if (error.status === 404) {
             console.log('Payment likely successful (404). Stopping poll.')
-            Toast.notify({ type: 'success', message: t('billing.paymentSuccessful') })
+            Toast.notify({ type: 'success', message: 'Thanh toán thành công.' })
             stopPolling()
             setIsQrModalOpen(false)
             mutateUserProfile()
@@ -93,7 +91,7 @@ const CustomPlan: FC<Props> = ({ plan }) => {
             window.location.reload()
           } else {
             console.error('Error checking payment status:', error)
-            Toast.notify({ type: 'error', message: error.message || t('billing.errors.paymentCheckFailed') })
+            Toast.notify({ type: 'error', message: error.message || 'Kiểm tra thanh toán thất bại.' })
             stopPolling()
           }
         }
@@ -105,7 +103,7 @@ const CustomPlan: FC<Props> = ({ plan }) => {
     return () => {
       stopPolling()
     }
-  }, [isQrModalOpen, currentAlies, userProfile?.id, t, mutateUserProfile])
+  }, [isQrModalOpen, currentAlies, userProfile?.id, mutateUserProfile])
 
   const handlePay = async () => {
     if (isMutating || isCurrent) return
@@ -119,10 +117,10 @@ const CustomPlan: FC<Props> = ({ plan }) => {
         setCurrentAlies(result.alies)
         setIsQrModalOpen(true)
       } else {
-        Toast.notify({ type: 'error', message: result?.message || t('billing.errors.paymentUrlMissing') })
+        Toast.notify({ type: 'error', message: result?.message || 'Thiếu URL thanh toán.' })
       }
     } catch (error: any) {
-      Toast.notify({ type: 'error', message: error.message || t('billing.errors.paymentRequestFailed') })
+      Toast.notify({ type: 'error', message: error.message || 'Yêu cầu thanh toán thất bại.' })
     }
   }
 
@@ -162,12 +160,12 @@ const CustomPlan: FC<Props> = ({ plan }) => {
           <div className='flex items-end'>
             <div className='leading-[125%] text-[28px] font-bold text-text-primary'>{formatPrice(plan.price)} VNĐ</div>
             <div className='ml-1 text-[14px] font-normal leading-normal text-text-tertiary'>
-              / {plan.plan_expiration} {t('billing.plansCommon.days')}
+              / {plan.plan_expiration} ngày
             </div>
           </div>
           {isCurrent && planExpiration && (
             <div className='mt-1 text-xs text-text-secondary'>
-              {t('billing.currentPlanExpireAt')} {formatDate(planExpiration)}
+              Ngày hết hạn gói: {formatDate(planExpiration)}
             </div>
           )}
         </div>
@@ -184,33 +182,36 @@ const CustomPlan: FC<Props> = ({ plan }) => {
           onClick={handlePay}
         >
           {isCurrent
-            ? t('billing.plansCommon.currentPlan') : isMutating ? 'processing...' : 'Buy'}
+            ? 'Gói hiện tại'
+            : isMutating
+            ? 'Đang xử lý...'
+            : 'Buy'}
         </button>
 
         <div className='mt-6 flex flex-col gap-y-3'>
           <KeyValue
             icon={<RiGroupLine />}
-            label={`${plan.features.members} ${t('billing.plansCommon.teamMember')}`}
+            label={`${plan.features.members} thành viên`}
           />
           <KeyValue
             icon={<RiApps2Line />}
-            label={`${plan.features.apps} ${t('billing.plansCommon.buildApps')}`}
+            label={`${plan.features.apps} ứng dụng`}
           />
           <Divider bgStyle='gradient' />
           <KeyValue
             icon={<RiHardDrive3Line />}
-            label={`${plan.features.vector_space}MB ${t('billing.plansCommon.vectorSpace')}`}
-            tooltip={t('billing.plansCommon.vectorSpaceTooltip') as string}
+            label={`${plan.features.vector_space}MB không gian vector`}
+            tooltip={'Dung lượng lưu trữ vector (MB).'}
           />
           <KeyValue
             icon={<RiSpeedUpLine />}
-            label={`${plan.features.documents_upload_quota} ${t('billing.plansCommon.knowledgeUploadLimit')}`}
-            tooltip={t('billing.plansCommon.knowledgeUploadLimitTooltip') as string}
+            label={`${plan.features.documents_upload_quota} tải lên tài liệu`}
+            tooltip={'Giới hạn số lượng tài liệu được tải lên.'}
           />
           <KeyValue
             icon={<RiRssLine />}
-            label={`${plan.features.annotation_quota_limit} ${t('billing.plansCommon.annotationQuota')}`}
-            tooltip={t('billing.plansCommon.annotationQuotaTooltip') as string}
+            label={`${plan.features.annotation_quota_limit} hạn mức chú thích`}
+            tooltip={'Giới hạn số lượng chú thích.'}
           />
         </div>
       </div>
@@ -224,16 +225,16 @@ const CustomPlan: FC<Props> = ({ plan }) => {
             className='bg-white rounded-lg shadow-xl p-6 flex flex-col items-center max-w-[600px] w-full'
             onClick={e => e.stopPropagation()}
           >
-            <h2 className='text-lg font-semibold mb-4 text-gray-900'>{t('billing.scanToPayTitle')}</h2>
+            <h2 className='text-lg font-semibold mb-4 text-gray-900'>Quét mã để thanh toán</h2>
             <img
               className='mb-4'
               src={qrUrl}
               alt='Payment QR code'
             />
-            <p className='text-sm text-gray-600 mb-4'>{t('billing.scanToPay')}</p>
-            <p className='text-xs text-gray-500 mb-4'>{t('billing.checkingPaymentStatus')}</p>
+            <p className='text-sm text-gray-600 mb-4'>Vui lòng quét mã QR để thanh toán.</p>
+            <p className='text-xs text-gray-500 mb-4'>Đang kiểm tra trạng thái thanh toán...</p>
             <Button onClick={handleCloseModal} className='w-full'>
-              {t('common.operation.close')}
+              Đóng
             </Button>
           </div>
         </div>
