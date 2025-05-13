@@ -58,7 +58,8 @@ const AppCard = ({
           <div className={cn('flex h-8 w-full items-center space-x-2')}>
             <Button variant='primary' className='h-7 grow' onClick={() => onCreate()}>
               <PlusIcon className='mr-1 h-4 w-4' />
-              <span className='text-xs'>{t('explore.appCard.addToWorkspace')}</span>
+              {/* <span className='text-xs'>{t('explore.appCard.addToWorkspace')}</span> */}
+              <span className='text-xs'>Open</span>
             </Button>
           </div>
         </div>

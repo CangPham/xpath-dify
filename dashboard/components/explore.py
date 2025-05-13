@@ -159,10 +159,10 @@ def render():
             install_count = st.number_input("Lượt cài đặt", value=0, step=1)
 
         with col2:
-            category = st.text_input("Phân loại")
-            description = st.text_area("Mô tả")
-            copyright_ = st.text_input("Bản quyền")
-            privacy_policy = st.text_input("Privacy Policy URL")
+            category = st.text_input("Phân loại", value="sample")
+            description = st.text_area("Mô tả", value="sample")
+            copyright_ = st.text_input("Bản quyền", value="sample")
+            privacy_policy = st.text_input("Privacy Policy URL", value="sample")
 
         submitted = st.form_submit_button("Thêm mới")
 

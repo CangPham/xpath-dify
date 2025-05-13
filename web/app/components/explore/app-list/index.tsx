@@ -213,8 +213,11 @@ const Apps = ({
               app={app}
               canCreate={hasEditPermission}
               onCreate={() => {
-                setCurrApp(app)
-                setIsShowCreateModal(true)
+                // setCurrApp(app)
+                // setIsShowCreateModal(true)
+                // Open new tab url to `${window.location.origin}/chat/${app.code}`
+                // window.open(`${window.location.origin}/chat/${app.code}`, '_blank')
+                window.location.href = `${window.location.origin}/chat/${app.code}`
               }}
             />
           ))}

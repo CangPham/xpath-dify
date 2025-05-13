@@ -50,9 +50,9 @@ class DatabaseRecommendAppRetrieval(RecommendAppRetrievalBase):
             if not app: #  or not app.is_public
                 continue
 
-            # site = app.site
-            # if not site:
-            #     continue
+            site = app.site
+            if not site:
+                continue
 
             recommended_app_result = {
                 "id": recommended_app.id,
@@ -65,6 +65,7 @@ class DatabaseRecommendAppRetrieval(RecommendAppRetrievalBase):
                 "category": recommended_app.category,
                 "position": recommended_app.position,
                 "is_listed": recommended_app.is_listed,
+                "code": site.code,
             }
             recommended_apps_result.append(recommended_app_result)
 
@@ -91,7 +92,7 @@ class DatabaseRecommendAppRetrieval(RecommendAppRetrievalBase):
 
         # get app detail
         app_model = db.session.query(App).filter(App.id == app_id).first()
-        if not app_model: # or not app_model.is_public
+        if not app_model or not app_model.is_public:
             return None
 
         return {
