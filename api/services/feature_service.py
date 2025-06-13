@@ -179,8 +179,8 @@ class FeatureService:
             limit_info = BillingService.get_knowledge_rate_limit(tenant_id)
             knowledge_rate_limit.limit = limit_info.get("limit", 10)
             knowledge_rate_limit.subscription_plan = limit_info.get("subscription_plan", "sandbox")
-        # return knowledge_rate_limit
-        return 10000
+        return knowledge_rate_limit
+        #return 10000
 
     @classmethod
     def get_system_features(cls) -> SystemFeatureModel:
